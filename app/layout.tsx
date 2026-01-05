@@ -7,6 +7,9 @@ import "./globals.css";
 export const metadata: Metadata = {
     title: "N-edu Admin",
     description: "N-edu Admin Dashboard",
+    icons: {
+        icon: '/favicon.svg',
+    },
 };
 
 export default function RootLayout({

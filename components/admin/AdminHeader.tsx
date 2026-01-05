@@ -16,9 +16,30 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Sidebar } from "@/components/ui/sidebar"
 import Link from "next/link"
 import { BookOpen, Building, FileText, KeyRound, LayoutDashboard, Settings, Ticket, Users } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
+import { User } from "@supabase/supabase-js"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 
 export function AdminHeader() {
     const isMobile = useIsMobile()
+    const [user, setUser] = useState<User | null>(null)
+    const router = useRouter()
+
+    useEffect(() => {
+        const supabase = createClient()
+        const getUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            setUser(user)
+        }
+        getUser()
+    }, [])
+
+    const handleLogout = async () => {
+        const supabase = createClient()
+        await supabase.auth.signOut()
+        router.refresh()
+    }
 
     return (
         <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
@@ -42,17 +63,17 @@ export function AdminHeader() {
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                                 <Avatar className="h-8 w-8">
-                                    <AvatarImage src="https://github.com/shadcn.png" alt="@admin" />
-                                    <AvatarFallback>AD</AvatarFallback>
+                                    <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.email || ''} />
+                                    <AvatarFallback>{user?.email?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
                                 </Avatar>
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-56" align="end" forceMount>
                             <DropdownMenuLabel className="font-normal">
                                 <div className="flex flex-col space-y-1">
-                                    <p className="text-sm font-medium leading-none">Admin User</p>
+                                    <p className="text-sm font-medium leading-none">{user?.user_metadata?.name || 'User'}</p>
                                     <p className="text-xs leading-none text-muted-foreground">
-                                        admin@nedu.com
+                                        {user?.email}
                                     </p>
                                 </div>
                             </DropdownMenuLabel>
@@ -64,8 +85,8 @@ export function AdminHeader() {
                                 Support
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem asChild>
-                                <Link href="/login">Log out</Link>
+                            <DropdownMenuItem onClick={handleLogout}>
+                                Log out
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
