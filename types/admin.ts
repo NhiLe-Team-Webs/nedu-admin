@@ -24,3 +24,19 @@ export type Mentor = {
     quote?: string;
     createdAt: Date | any;
 };
+
+export type Course = {
+    id: string;
+    title: string;
+};
+
+export type PromoCode = {
+    id: string;
+    code: string;
+    discountAmount: number;
+    quantity: number;
+    startDate: Date;
+    endDate: Date;
+    courseIds: string[];
+    createdAt: Date | any;
+};

@@ -55,7 +55,7 @@ export const MOCK_USERS: User[] = [
         status: "banned",
         lastLogin: "2023-10-01 08:30:00",
         createdAt: "2023-08-05",
-    }
+    },
 ];
 
 export const MOCK_STATS = [
@@ -115,5 +115,34 @@ export const MOCK_MENTORS = [
         avatarUrl: "https://github.com/shadcn.png",
         quote: "Khách hàng là thượng đế.",
         createdAt: new Date("2023-03-10"),
+    },
+];
+
+export const MOCK_COURSES = [
+    { id: "c1", title: "LÀ CHÍNH MÌNH" },
+    { id: "c2", title: "TRỞ THÀNH COACH CHUYÊN NGHIỆP" },
+    { id: "c3", title: "MASTER COACH" },
+];
+
+export const MOCK_PROMO_CODES = [
+    {
+        id: "p1",
+        code: "SALE2024",
+        discountAmount: 500000,
+        quantity: 100,
+        startDate: new Date("2024-01-01"),
+        endDate: new Date("2024-12-31"),
+        courseIds: ["c1", "c2"],
+        createdAt: new Date("2023-12-25"),
+    },
+    {
+        id: "p2",
+        code: "WELCOME",
+        discountAmount: 200000,
+        quantity: 50,
+        startDate: new Date("2024-02-01"),
+        endDate: new Date("2024-02-28"),
+        courseIds: ["c1"],
+        createdAt: new Date("2024-01-20"),
     },
 ];
