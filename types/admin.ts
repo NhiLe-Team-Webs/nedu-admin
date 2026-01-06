@@ -26,9 +26,76 @@ export type Mentor = {
     createdAt: Date | any;
 };
 
+export type VideoTestimonial = {
+    id: string;
+    link: string;
+    description: string;
+};
+
+export type TimelineDay = {
+    id: string;
+    title: string;
+    quoteText: string;
+    quote: string;
+};
+
+export type CurriculumLesson = {
+    id: string;
+    title: string;
+    duration?: string;
+    type: 'video' | 'article' | 'quiz' | string;
+    link?: string;
+};
+
+export type CurriculumSection = {
+    id: string;
+    title: string;
+    lessons: CurriculumLesson[];
+};
+
+export type CourseReview = {
+    id: string;
+    userName: string;
+    userAvatar?: string;
+    rating: number;
+    comment: string;
+    status: 'visible' | 'hidden';
+    createdAt: string;
+};
+
+export type FeaturedStudent = {
+    name: string;
+    role: string;
+    description: string;
+    avatarUrl?: string;
+};
+
 export type Course = {
     id: string;
     title: string;
+    shortDescription?: string;
+    description?: string;
+    fee?: string | number;
+    membershipFee?: string | number;
+    type?: 'Membership' | 'Course' | string;
+    topic?: string;
+    format?: string;
+    schedule?: string;
+    location?: string;
+    studentCount?: number;
+    thumbnailUrl?: string;
+    thumbnailUrl_9_16?: string;
+    status?: 'draft' | 'published' | 'archived';
+    isFeatured?: boolean;
+    instructorIds?: string[];
+    timeline?: TimelineDay[];
+    videoTestimonials?: VideoTestimonial[];
+    curriculum?: CurriculumSection[];
+    reviews?: CourseReview[];
+    requirements?: string[];
+    outcomes?: string[];
+    featuredStudent?: FeaturedStudent;
+    createdAt?: string;
 };
 
 export type PromoCode = {
