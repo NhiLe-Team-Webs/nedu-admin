@@ -13,3 +13,14 @@ export type SiteConfig = {
     socialLinks: SocialLink[];
     updatedAt: Date | string;
 };
+
+export type Mentor = {
+    id: string;
+    name: string;
+    role: string;
+    bio: string;
+    cvUrl?: string;
+    avatarUrl?: string;
+    quote?: string;
+    createdAt: Date | any;
+};
