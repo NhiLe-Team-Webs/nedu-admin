@@ -11,6 +11,7 @@ export type SiteConfig = {
     logoMenuUrl: string;
     logoFooterUrl: string;
     socialLinks: SocialLink[];
+    featuredMentorIds?: string[];
     updatedAt: Date | string;
 };
 
@@ -39,4 +40,48 @@ export type PromoCode = {
     endDate: Date;
     courseIds: string[];
     createdAt: Date | any;
+};
+
+export type Faq = {
+    id: string;
+    question: string;
+    answer: string;
+    createdAt: Date | string | any;
+};
+
+export type FeaturedEvent = {
+    id: string;
+    title: string;
+    description: string;
+    quote?: string;
+    registrations?: number;
+    courseId: string;
+    courseName?: string;
+    schedule?: string;
+    type?: 'online' | 'offline' | string;
+    imageUrl?: string;
+    updatedAt: Date | string | any;
+};
+
+export type Partner = {
+    id: string;
+    logoUrl: string;
+    createdAt: Date | string | any;
+};
+
+export type SocialPost = {
+    id: string;
+    platform: 'facebook' | 'instagram' | 'tiktok' | 'youtube';
+    embedHtml: string;
+    createdAt: Date | string | any;
+};
+
+export type Testimonial = {
+    id: string;
+    name: string;
+    role: string;
+    content: string;
+    location: string;
+    avatarUrl: string;
+    createdAt: Date | string | any;
 };
