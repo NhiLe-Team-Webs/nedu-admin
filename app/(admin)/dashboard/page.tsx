@@ -1,6 +1,9 @@
+"use client"
+
 import { StatsCard } from "@/components/admin/StatsCard"
 import { MOCK_STATS } from "@/lib/mock-data"
-import { Users, UserCheck, UserPlus, Clock, LucideIcon } from "lucide-react"
+import { Users, UserCheck, UserPlus, Clock, LucideIcon, PanelLeft } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 const iconMap: Record<string, LucideIcon> = {
     Users,
@@ -11,8 +14,18 @@ const iconMap: Record<string, LucideIcon> = {
 
 export default function DashboardPage() {
     return (
-        <div className="space-y-6">
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <div className="p-4">
+            {/* Mobile Sidebar Trigger */}
+            <div className="md:hidden mb-4">
+                <Button variant="ghost" size="icon" className="h-7 w-7">
+                    <PanelLeft />
+                    <span className="sr-only">Toggle Sidebar</span>
+                </Button>
+            </div>
+
+            {/* Page Title */}
+            <h1 className="text-2xl font-bold mb-4">THÔNG TIN DOANH NGHIỆP</h1>
+
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {MOCK_STATS.map((stat, index) => {
                     const Icon = iconMap[stat.icon] || Users
