@@ -1,27 +1,18 @@
-"use client";
+'use client'
 
-import { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, PlusCircle } from 'lucide-react';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { cn } from '@/lib/utils';
+import { useState, useEffect } from 'react'
+import { PanelLeft, CirclePlus, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { cn } from '@/lib/utils'
 
 type UserRole = 'Owner' | 'Admin';
 
@@ -42,9 +33,16 @@ const isValidEmail = (email: string): boolean => {
     return emailRegex.test(email);
 }
 
-const PermissionForm = ({ onAddUser, onCancel, isMobile }: { onAddUser: (email: string, role: UserRole) => void, onCancel: () => void, isMobile: boolean }) => {
-    const [newUserEmail, setNewUserEmail] = useState("");
-    const [newUserRole, setNewUserRole] = useState<UserRole>('Admin');
+const PermissionForm = ({ onAddUser, onCancel, isMobile, isSubmitting, submitError, currentUserRole }: {
+    onAddUser: (email: string, role: UserRole) => void
+    onCancel: () => void
+    isMobile: boolean
+    isSubmitting?: boolean
+    submitError?: string | null
+    currentUserRole?: string | null
+}) => {
+    const [newUserEmail, setNewUserEmail] = useState('')
+    const [newUserRole, setNewUserRole] = useState<UserRole>('admin')
 
     const handleAddClick = () => {
         onAddUser(newUserEmail, newUserRole);
