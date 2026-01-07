@@ -55,7 +55,7 @@ export const MOCK_USERS: User[] = [
         status: "banned",
         lastLogin: "2023-10-01 08:30:00",
         createdAt: "2023-08-05",
-    }
+    },
 ];
 
 export const MOCK_STATS = [
@@ -82,5 +82,67 @@ export const MOCK_STATS = [
         value: "12",
         change: "-3 from yesterday",
         icon: "Clock",
+    },
+];
+
+export const MOCK_MENTORS = [
+    {
+        id: "1",
+        name: "Nguyễn Văn A",
+        role: "FOUNDER & CEO",
+        bio: "Hơn 10 năm kinh nghiệm trong lĩnh vực khởi nghiệp và quản trị doanh nghiệp. Đã từng dẫn dắt nhiều dự án thành công.",
+        cvUrl: "https://example.com/cv-nguyen-van-a.pdf",
+        avatarUrl: "https://github.com/shadcn.png",
+        quote: "Không có việc gì khó, chỉ sợ lòng không bền.",
+        createdAt: new Date("2023-01-15"),
+    },
+    {
+        id: "2",
+        name: "Trần Thị B",
+        role: "CTO",
+        bio: "Chuyên gia công nghệ với nền tảng kỹ thuật vững chắc. Đam mê xây dựng các sản phẩm công nghệ tiên tiến.",
+        cvUrl: "https://example.com/cv-tran-thi-b.pdf",
+        avatarUrl: "https://github.com/shadcn.png",
+        quote: "Công nghệ thay đổi cuộc sống.",
+        createdAt: new Date("2023-02-20"),
+    },
+    {
+        id: "3",
+        name: "Lê Văn C",
+        role: "MARKETING DIRECTOR",
+        bio: "Sáng tạo và am hiểu thị trường. Đã thực hiện nhiều chiến dịch marketing gây tiếng vang lớn.",
+        cvUrl: "https://example.com/cv-le-van-c.pdf",
+        avatarUrl: "https://github.com/shadcn.png",
+        quote: "Khách hàng là thượng đế.",
+        createdAt: new Date("2023-03-10"),
+    },
+];
+
+export const MOCK_COURSES = [
+    { id: "c1", title: "LÀ CHÍNH MÌNH" },
+    { id: "c2", title: "TRỞ THÀNH COACH CHUYÊN NGHIỆP" },
+    { id: "c3", title: "MASTER COACH" },
+];
+
+export const MOCK_PROMO_CODES = [
+    {
+        id: "p1",
+        code: "SALE2024",
+        discountAmount: 500000,
+        quantity: 100,
+        startDate: new Date("2024-01-01"),
+        endDate: new Date("2024-12-31"),
+        courseIds: ["c1", "c2"],
+        createdAt: new Date("2023-12-25"),
+    },
+    {
+        id: "p2",
+        code: "WELCOME",
+        discountAmount: 200000,
+        quantity: 50,
+        startDate: new Date("2024-02-01"),
+        endDate: new Date("2024-02-28"),
+        courseIds: ["c1"],
+        createdAt: new Date("2024-01-20"),
     },
 ];

@@ -99,7 +99,7 @@ export function AdminHeader() {
 const sidebarItems = [
     { title: "Dashboard", icon: Building, href: "/dashboard" },
     { title: "Users", icon: Users, href: "/users" },
-    { title: "Courses", icon: BookOpen, href: "/courses" },
+    { title: "Khóa học", icon: BookOpen, href: "/courses" },
     { title: "Mentors", icon: Users, href: "/mentors" },
     { title: "Deals", icon: Ticket, href: "/deals" },
     { title: "Home Config", icon: Settings, href: "/home-config" },
