@@ -344,14 +344,42 @@ export default function PermissionsPage() {
     }
 
     return (
-        <div className="p-4">
-            {/* Mobile Sidebar Trigger */}
-            <div className="md:hidden mb-4">
-                <Button variant="ghost" size="icon" className="h-7 w-7">
-                    <PanelLeft />
-                    <span className="sr-only">Toggle Sidebar</span>
-                </Button>
+        <div className="py-4 space-y-4">
+            <div className="space-y-2">
+                <Label htmlFor="user-email">Email</Label>
+                <Input
+                    id="user-email"
+                    value={newUserEmail}
+                    onChange={(e) => setNewUserEmail(e.target.value)}
+                    placeholder="example@email.com"
+                />
             </div>
+            <div className="space-y-2">
+                <Label htmlFor="user-role">VAI TRÒ</Label>
+                <Select value={newUserRole} onValueChange={(value: UserRole) => setNewUserRole(value)}>
+                    <SelectTrigger id="user-role">
+                        <SelectValue placeholder="Chọn quyền" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Owner">Owner</SelectItem>
+                        <SelectItem value="Admin">Admin</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className={cn("flex", isMobile ? "flex-col-reverse gap-2" : "justify-end gap-2")}>
+                <Button variant="ghost" onClick={onCancel}>Hủy</Button>
+                <Button onClick={handleAddClick} disabled={!isValidEmail(newUserEmail)}>Xác nhận</Button>
+            </div>
+        </div>
+    )
+}
+
+export function PermissionsManager() {
+    const [users, setUsers] = useState<UserPermission[]>(mockUsers);
+    const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+    const [userToRemove, setUserToRemove] = useState<UserPermission | null>(null);
+    const [view, setView] = useState<'list' | 'form'>('list');
+    const isMobile = useIsMobile();
 
             <div className="space-y-4">
                 {/* Page Header */}
@@ -477,5 +505,9 @@ export default function PermissionsPage() {
                 </AlertDialogContent>
             </AlertDialog>
         </div>
-    )
+    );
+}
+
+export default function PermissionsPage() {
+    return <PermissionsManager />
 }
