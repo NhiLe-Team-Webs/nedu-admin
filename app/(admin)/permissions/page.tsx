@@ -59,12 +59,14 @@ const PermissionForm = ({
     isMobile,
     isSubmitting,
     submitError,
+    currentUserRole,
 }: {
     onAddUser: (email: string, role: UserRole) => void
     onCancel: () => void
     isMobile: boolean
     isSubmitting?: boolean
     submitError?: string | null
+    currentUserRole?: string | null
 }) => {
     const [newUserEmail, setNewUserEmail] = useState('')
     const [newUserRole, setNewUserRole] = useState<UserRole>('admin')
@@ -91,7 +93,9 @@ const PermissionForm = ({
                         <SelectValue placeholder="Chọn quyền" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="owner">Owner</SelectItem>
+                        {currentUserRole === 'owner' && (
+                            <SelectItem value="owner">Owner</SelectItem>
+                        )}
                         <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                 </Select>
@@ -132,14 +136,26 @@ export default function PermissionsPage() {
     const [error, setError] = useState<string | null>(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitError, setSubmitError] = useState<string | null>(null)
+    const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
     const isMobile = useIsMobile()
 
     // Fetch admins from API
     useEffect(() => {
-        const fetchAdmins = async () => {
+        const fetchData = async () => {
             try {
                 setIsLoading(true)
                 setError(null)
+
+                // Fetch current user role
+                const meResponse = await fetch('/api/admin/me')
+                if (meResponse.ok) {
+                    const meData = await meResponse.json()
+                    if (meData.success) {
+                        setCurrentUserRole(meData.data.role)
+                    }
+                }
+
+                // Fetch admin list
                 const response = await fetch('/api/admin')
                 if (!response.ok) {
                     throw new Error('Không thể tải danh sách admin')
@@ -162,31 +178,95 @@ export default function PermissionsPage() {
             }
         }
 
-        fetchAdmins()
+        fetchData()
     }, [])
 
-    const handleRoleChange = (userId: string, newRole: UserRole | 'Remove') => {
+    const handleRoleChange = async (userId: string, newRole: UserRole | 'Remove') => {
         if (newRole === 'Remove') {
             const user = users.find((u) => u.id === userId)
             if (user) {
                 setUserToRemove(user)
             }
-        } else if (newRole === 'owner') {
-            setUsers(
-                users.map((user) => {
-                    if (user.id === userId) return { ...user, role: 'owner' }
-                    if (user.role === 'owner') return { ...user, role: 'admin' }
-                    return user
-                })
-            )
-        } else {
-            setUsers(users.map((user) => (user.id === userId ? { ...user, role: newRole } : user)))
+            return
+        }
+
+        // Check if current user is owner
+        if (currentUserRole !== 'owner') {
+            toast.error('Không có quyền', {
+                description: 'Chỉ owner mới có thể thay đổi vai trò',
+            })
+            return
+        }
+
+        try {
+            const response = await fetch('/api/admin', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    id: userId,
+                    role: newRole,
+                }),
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Không thể cập nhật vai trò')
+            }
+
+            // Update local state
+            setUsers(users.map((user) => (user.id === userId ? data.data : user)))
+
+            toast.success('Đã cập nhật vai trò thành công', {
+                description: `Email: ${data.data.email}`,
+            })
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Có lỗi xảy ra'
+            toast.error('Cập nhật vai trò thất bại', {
+                description: errorMessage,
+            })
+            console.error('Error updating role:', err)
         }
     }
 
-    const confirmRemoveUser = () => {
-        if (userToRemove) {
+    const confirmRemoveUser = async () => {
+        if (!userToRemove) return
+
+        // Check if current user is owner
+        if (currentUserRole !== 'owner') {
+            toast.error('Không có quyền', {
+                description: 'Chỉ owner mới có thể xóa người dùng',
+            })
+            setUserToRemove(null)
+            return
+        }
+
+        try {
+            const response = await fetch(`/api/admin?id=${userToRemove.id}`, {
+                method: 'DELETE',
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Không thể xóa người dùng')
+            }
+
+            // Remove from local state
             setUsers(users.filter((user) => user.id !== userToRemove.id))
+            setUserToRemove(null)
+
+            toast.success('Đã xóa người dùng thành công', {
+                description: `Email: ${userToRemove.email}`,
+            })
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Có lỗi xảy ra'
+            toast.error('Xóa người dùng thất bại', {
+                description: errorMessage,
+            })
+            console.error('Error deleting user:', err)
             setUserToRemove(null)
         }
     }
@@ -255,6 +335,7 @@ export default function PermissionsPage() {
                             isMobile={true}
                             isSubmitting={isSubmitting}
                             submitError={submitError}
+                            currentUserRole={currentUserRole}
                         />
                     </CardContent>
                 </Card>
@@ -299,6 +380,7 @@ export default function PermissionsPage() {
                                     isMobile={false}
                                     isSubmitting={isSubmitting}
                                     submitError={submitError}
+                                    currentUserRole={currentUserRole}
                                 />
                             </DialogContent>
                         </Dialog>
@@ -349,7 +431,7 @@ export default function PermissionsPage() {
                                                         onValueChange={(value: UserRole | 'Remove') =>
                                                             handleRoleChange(user.id, value)
                                                         }
-                                                        disabled={user.role === 'owner'}
+                                                        disabled={currentUserRole !== 'owner'}
                                                     >
                                                         <SelectTrigger>
                                                             <SelectValue placeholder="Chọn quyền" />
@@ -357,12 +439,14 @@ export default function PermissionsPage() {
                                                         <SelectContent>
                                                             <SelectItem value="owner">Owner</SelectItem>
                                                             <SelectItem value="admin">Admin</SelectItem>
-                                                            <SelectItem
-                                                                value="Remove"
-                                                                className="text-destructive-foreground bg-destructive hover:bg-destructive/90 focus:bg-destructive focus:text-destructive-foreground"
-                                                            >
-                                                                Gỡ
-                                                            </SelectItem>
+                                                            {currentUserRole === 'owner' && (
+                                                                <SelectItem
+                                                                    value="Remove"
+                                                                    className="text-destructive-foreground bg-destructive hover:bg-destructive/90 focus:bg-destructive focus:text-destructive-foreground"
+                                                                >
+                                                                    Gỡ
+                                                                </SelectItem>
+                                                            )}
                                                         </SelectContent>
                                                     </Select>
                                                 </TableCell>
