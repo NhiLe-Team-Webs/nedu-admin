@@ -17,25 +17,28 @@ import { useRouter } from "next/navigation";
 
 // Sub-components
 import { CourseInfoForm } from "./components/CourseInfoForm";
-import { CourseCurriculumForm } from "./components/CourseCurriculumForm";
-import { CourseSettingsForm } from "./components/CourseSettingsForm";
-import { CourseStudentsForm } from "./components/CourseStudentsForm";
-import { CourseReviewsForm } from "./components/CourseReviewsForm";
-import { CourseMentorsForm } from "./components/CourseMentorsForm";
-import { CourseTestimonialsForm } from "./components/CourseTestimonialsForm";
-import { CourseTimelineForm } from "./components/CourseTimelineForm";
+// import { CourseCurriculumForm } from "./components/CourseCurriculumForm";
+// import { CourseSettingsForm } from "./components/CourseSettingsForm";
+// import { CourseStudentsForm } from "./components/CourseStudentsForm";
+// import { CourseReviewsForm } from "./components/CourseReviewsForm";
+import { CourseInstructorForm } from "./components/CourseInstructorForm";
+// import { CourseTestimonialsForm } from "./components/CourseTestimonialsForm";
+// import { CourseTimelineForm } from "./components/CourseTimelineForm";
+import { CourseBenefitsForm } from "./components/CourseBenefitsForm";
 
-type CourseTab = 'info' | 'curriculum' | 'timeline' | 'mentors' | 'testimonials' | 'students' | 'reviews' | 'settings';
+type CourseTab = 'info' | 'benefits' | 'mentors';
+// type CourseTab = 'info' | 'curriculum' | 'timeline' | 'mentors' | 'testimonials' | 'students' | 'reviews' | 'settings';
 
 const tabConfig: Record<CourseTab, { label: string; component: React.ComponentType<{ course: Course, onUpdate?: () => void }> }> = {
-    'info': { label: 'Thông tin chung', component: CourseInfoForm as any },
-    'curriculum': { label: 'Chương trình học', component: CourseCurriculumForm as any },
-    'timeline': { label: 'Lộ trình', component: CourseTimelineForm as any },
-    'mentors': { label: 'Người dẫn đường', component: CourseMentorsForm as any },
-    'testimonials': { label: 'Lời chứng thực', component: CourseTestimonialsForm as any },
-    'students': { label: 'Học viên', component: CourseStudentsForm as any },
-    'reviews': { label: 'Đánh giá', component: CourseReviewsForm as any },
-    'settings': { label: 'Cài đặt', component: CourseSettingsForm as any },
+    'info': { label: 'Thông tin khóa học', component: CourseInfoForm as any },
+    'benefits': { label: 'Lợi ích học viên', component: CourseBenefitsForm as any },
+    'mentors': { label: 'Người dẫn đường', component: CourseInstructorForm as any },
+    // 'curriculum': { label: 'Chương trình học', component: CourseCurriculumForm as any },
+    // 'timeline': { label: 'Lộ trình', component: CourseTimelineForm as any },
+    // 'testimonials': { label: 'Lời chứng thực', component: CourseTestimonialsForm as any },
+    // 'students': { label: 'Học viên', component: CourseStudentsForm as any },
+    // 'reviews': { label: 'Đánh giá', component: CourseReviewsForm as any },
+    // 'settings': { label: 'Cài đặt', component: CourseSettingsForm as any },
 };
 
 import { Course } from "@/types/admin";
@@ -98,7 +101,7 @@ export const CourseDetail = ({ course, onBack, onUpdate }: CourseDetailProps) =>
                 </Button>
                 <div>
                     <h1 className="text-xl font-bold">Chi tiết khóa học</h1>
-                    <p className="text-sm text-muted-foreground">{course.title}</p>
+                    <p className="text-sm font-semibold text-[#F8B516]">{course.title}</p>
                 </div>
             </div>
 

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CourseInfoDisplay } from "./CourseInfoDisplay";
 import { CourseEditForm } from "./CourseEditForm";
@@ -64,6 +66,7 @@ export const CourseInfoForm = ({ course: initialCourse, onUpdate }: { course: Co
     };
 
     const handleCancel = () => {
+        setFormData(initialCourse);
         setIsEditing(false);
     };
 
@@ -75,17 +78,23 @@ export const CourseInfoForm = ({ course: initialCourse, onUpdate }: { course: Co
         );
     }
 
-    if (isEditing) {
-        return <CourseEditForm course={formData} onUpdate={handleUpdate} onCancel={handleCancel} />;
-    }
-
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Thông tin chung</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <CourseInfoDisplay course={formData} onEdit={() => setIsEditing(true)} />
+        <Card className="relative overflow-hidden">
+            <CardContent className="pt-6">
+                {!isEditing && (
+                    <div className="absolute inset-0 bg-gray-100/70 dark:bg-gray-900/70 z-10 flex items-center justify-center rounded-lg">
+                        <Button size="lg" onClick={() => setIsEditing(true)}>
+                            <Edit className="mr-2 h-5 w-5" />
+                            Chỉnh sửa
+                        </Button>
+                    </div>
+                )}
+
+                {isEditing ? (
+                    <CourseEditForm course={formData} onUpdate={handleUpdate} onCancel={handleCancel} />
+                ) : (
+                    <CourseInfoDisplay course={formData} />
+                )}
             </CardContent>
         </Card>
     );

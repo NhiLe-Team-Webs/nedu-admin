@@ -89,6 +89,7 @@ export type Course = {
     isFeatured?: boolean;
     instructorIds?: string[];
     timeline?: TimelineDay[];
+    benefits?: TimelineDay[];
     videoTestimonials?: VideoTestimonial[];
     curriculum?: CurriculumSection[];
     reviews?: CourseReview[];

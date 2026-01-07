@@ -55,9 +55,37 @@ const INITIAL_COURSES: Course[] = [
         id: "COURSE-003",
         title: "Thử Thách 30 Ngày",
         type: "Course",
-        isFeatured: false,
+        isFeatured: true,
+        shortDescription: "30 ngày thay đổi tư duy và thói quen quản lý tài chính cá nhân.",
+        fee: 1990000,
+        topic: "Tài chính & Tư duy",
+        schedule: "Hàng ngày (30 ngày)",
+        location: "Online",
+        studentCount: 500,
+        thumbnailUrl: "",
+        thumbnailUrl_9_16: "",
+        instructorIds: ["INS-1"],
+        benefits: [
+            {
+                id: "benefit_1",
+                title: "Nắm rõ thu và chi mỗi tháng",
+                quoteText: "Tiền không khó quản lý, khó là mình không nhìn rõ nó.",
+                quote: "Sau 30 ngày, bạn sẽ biết rõ mỗi tháng tiền đi đâu, vì sao hết tiền và cách để dư ra ít nhất 10-20% thu nhập."
+            },
+            {
+                id: "benefit_2",
+                title: "Chi tiêu có kiểm soát",
+                quoteText: "Xài tiền không sai, xài mà không biết vì sao mới mệt.",
+                quote: "Bạn sẽ bắt đầu suy nghĩ trước khi chi, phân biệt được 'Muốn' và 'Cần', từ đó chấm dứt tình trạng mua sắm bốc đồng."
+            },
+            {
+                id: "benefit_3",
+                title: "Xây dựng thói quen bền vững",
+                quoteText: "Thứ làm bạn mệt không phải tiền, mà là cách xài tiền.",
+                quote: "Hình thành thói quen ghi chép và lập kế hoạch tài chính chỉ với 5 phút mỗi ngày, giúp tâm trí bình an hơn."
+            }
+        ],
         createdAt: new Date().toISOString()
-        // Missing fields for demo
     }
 ];
 

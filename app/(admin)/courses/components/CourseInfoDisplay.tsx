@@ -14,12 +14,7 @@ const formatCurrency = (value: string | number = '') => {
     return new Intl.NumberFormat('vi-VN').format(numberValue);
 };
 
-interface CourseInfoDisplayProps {
-    course: Course;
-    onEdit?: () => void;
-}
-
-export const CourseInfoDisplay = ({ course, onEdit }: CourseInfoDisplayProps) => {
+export const CourseInfoDisplay = ({ course }: { course: Course }) => {
     const { toast } = useToast();
 
     const infoItems = [
@@ -44,15 +39,6 @@ export const CourseInfoDisplay = ({ course, onEdit }: CourseInfoDisplayProps) =>
 
     return (
         <div className="space-y-8 relative">
-            {onEdit && (
-                <div className="absolute top-0 right-0 z-10 hidden md:block">
-                    <Button onClick={onEdit}>
-                        <Edit className="mr-2 h-4 w-4" /> Chỉnh sửa
-                    </Button>
-                </div>
-            )}
-
-
             <div className="flex flex-col md:flex-row gap-8 items-start">
                 {/* Images Section */}
                 <div className="w-full md:w-1/3 space-y-6">
@@ -111,13 +97,6 @@ export const CourseInfoDisplay = ({ course, onEdit }: CourseInfoDisplayProps) =>
                             </div>
                         ))}
                     </div>
-                    {onEdit && (
-                        <div className="md:hidden pt-4">
-                            <Button onClick={onEdit} className="w-full">
-                                <Edit className="mr-2 h-4 w-4" /> Chỉnh sửa
-                            </Button>
-                        </div>
-                    )}
                 </div>
             </div>
         </div>
