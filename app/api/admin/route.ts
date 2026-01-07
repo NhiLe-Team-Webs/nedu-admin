@@ -27,12 +27,20 @@ async function getCurrentUserRole(supabase: any) {
 export async function GET(request: Request) {
     try {
         const supabase = createClient()
+        const { searchParams } = new URL(request.url)
 
-        // Lấy danh sách admin từ bảng admin_users
-        const { data: admins, error } = await supabase
+        // Parse pagination params
+        const page = parseInt(searchParams.get('page') || '1')
+        const limit = parseInt(searchParams.get('limit') || '10')
+        const from = (page - 1) * limit
+        const to = from + limit - 1
+
+        // Lấy danh sách admin từ bảng admin_users với pagination
+        const { data: admins, error, count } = await supabase
             .from('admin_users')
-            .select('id, email, full_name, role, is_active, created_at, updated_at')
+            .select('id, email, full_name, role, is_active, created_at, updated_at', { count: 'exact' })
             .order('created_at', { ascending: false })
+            .range(from, to)
 
         if (error) {
             console.error('Error fetching admins:', error)
@@ -42,10 +50,18 @@ export async function GET(request: Request) {
             )
         }
 
+        const total = count || 0
+        const totalPages = Math.ceil(total / limit)
+
         return NextResponse.json({
             success: true,
             data: admins,
-            count: admins?.length || 0
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages
+            }
         })
     } catch (error) {
         console.error('Unexpected error:', error)

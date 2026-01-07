@@ -138,6 +138,13 @@ export default function PermissionsPage() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitError, setSubmitError] = useState<string | null>(null)
     const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
+
+    // Pagination state
+    const [page, setPage] = useState(1)
+    const [limit] = useState(10)
+    const [totalPages, setTotalPages] = useState(1)
+    const [totalUsers, setTotalUsers] = useState(0)
+
     const isMobile = useIsMobile()
 
     // Fetch admins from API
@@ -147,23 +154,30 @@ export default function PermissionsPage() {
                 setIsLoading(true)
                 setError(null)
 
-                // Fetch current user role
-                const meResponse = await fetch('/api/admin/me')
-                if (meResponse.ok) {
-                    const meData = await meResponse.json()
-                    if (meData.success) {
-                        setCurrentUserRole(meData.data.role)
+                // Fetch current user role if not already loaded
+                if (!currentUserRole) {
+                    const meResponse = await fetch('/api/admin/me')
+                    if (meResponse.ok) {
+                        const meData = await meResponse.json()
+                        if (meData.success) {
+                            setCurrentUserRole(meData.data.role)
+                        }
                     }
                 }
 
-                // Fetch admin list
-                const response = await fetch('/api/admin')
+                // Fetch admin list with pagination
+                const response = await fetch(`/api/admin?page=${page}&limit=${limit}`)
                 if (!response.ok) {
                     throw new Error('Không thể tải danh sách admin')
                 }
                 const data = await response.json()
                 if (data.success) {
                     setUsers(data.data)
+                    // Update pagination info
+                    if (data.pagination) {
+                        setTotalPages(data.pagination.totalPages)
+                        setTotalUsers(data.pagination.total)
+                    }
                 } else {
                     throw new Error(data.error || 'Có lỗi xảy ra')
                 }
@@ -180,7 +194,13 @@ export default function PermissionsPage() {
         }
 
         fetchData()
-    }, [])
+    }, [page, limit, currentUserRole])
+
+    const handlePageChange = (newPage: number) => {
+        if (newPage >= 1 && newPage <= totalPages) {
+            setPage(newPage)
+        }
+    }
 
     const handleRoleChange = async (userId: string, newRole: UserRole | 'Remove') => {
         if (newRole === 'Remove') {
@@ -255,8 +275,9 @@ export default function PermissionsPage() {
                 throw new Error(data.error || 'Không thể xóa người dùng')
             }
 
-            // Remove from local state
+            // Remove from local state and update total
             setUsers(users.filter((user) => user.id !== userToRemove.id))
+            setTotalUsers(prev => Math.max(0, prev - 1))
             setUserToRemove(null)
 
             toast.success('Đã xóa người dùng thành công', {
@@ -300,7 +321,12 @@ export default function PermissionsPage() {
             }
 
             // Add new admin to the list
-            setUsers([data.data, ...users])
+            // If on the first page, add to top. Otherwise just refresh logic or let user know
+            if (page === 1) {
+                setUsers([data.data, ...users].slice(0, limit))
+            }
+            setTotalUsers(prev => prev + 1)
+            // Ideally we might want to re-fetch to ensure consistency, but this is a simple update
 
             // Close dialog/form
             if (isMobile) {
@@ -406,54 +432,83 @@ export default function PermissionsPage() {
                                 </Button>
                             </div>
                         ) : (
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>EMAIL</TableHead>
-                                        <TableHead className="w-[150px]">VAI TRÒ</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {users.length === 0 ? (
+                            <>
+                                <Table>
+                                    <TableHeader>
                                         <TableRow>
-                                            <TableCell colSpan={2} className="text-center text-muted-foreground py-8">
-                                                Chưa có admin nào
-                                            </TableCell>
+                                            <TableHead>EMAIL</TableHead>
+                                            <TableHead className="w-[150px]">VAI TRÒ</TableHead>
                                         </TableRow>
-                                    ) : (
-                                        users.map((user) => (
-                                            <TableRow key={user.id}>
-                                                <TableCell className="font-medium">{user.email}</TableCell>
-                                                <TableCell>
-                                                    <Select
-                                                        value={user.role}
-                                                        onValueChange={(value: UserRole | 'Remove') =>
-                                                            handleRoleChange(user.id, value)
-                                                        }
-                                                        disabled={currentUserRole !== 'owner'}
-                                                    >
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Chọn quyền" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="owner">Owner</SelectItem>
-                                                            <SelectItem value="admin">Admin</SelectItem>
-                                                            {currentUserRole === 'owner' && (
-                                                                <SelectItem
-                                                                    value="Remove"
-                                                                    className="text-destructive-foreground bg-destructive hover:bg-destructive/90 focus:bg-destructive focus:text-destructive-foreground"
-                                                                >
-                                                                    Gỡ
-                                                                </SelectItem>
-                                                            )}
-                                                        </SelectContent>
-                                                    </Select>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {users.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={2} className="text-center text-muted-foreground py-8">
+                                                    Chưa có admin nào
                                                 </TableCell>
                                             </TableRow>
-                                        ))
-                                    )}
-                                </TableBody>
-                            </Table>
+                                        ) : (
+                                            users.map((user) => (
+                                                <TableRow key={user.id}>
+                                                    <TableCell className="font-medium">{user.email}</TableCell>
+                                                    <TableCell>
+                                                        <Select
+                                                            value={user.role}
+                                                            onValueChange={(value: UserRole | 'Remove') =>
+                                                                handleRoleChange(user.id, value)
+                                                            }
+                                                            disabled={currentUserRole !== 'owner'}
+                                                        >
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Chọn quyền" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="owner">Owner</SelectItem>
+                                                                <SelectItem value="admin">Admin</SelectItem>
+                                                                {currentUserRole === 'owner' && (
+                                                                    <SelectItem
+                                                                        value="Remove"
+                                                                        className="text-destructive-foreground bg-destructive hover:bg-destructive/90 focus:bg-destructive focus:text-destructive-foreground"
+                                                                    >
+                                                                        Gỡ
+                                                                    </SelectItem>
+                                                                )}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+
+                                {/* Pagination Controls */}
+                                {totalPages > 1 && (
+                                    <div className="flex items-center justify-end space-x-2 py-4">
+                                        <div className="flex-1 text-sm text-muted-foreground">
+                                            Trang {page} / {totalPages}
+                                        </div>
+                                        <div className="space-x-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handlePageChange(page - 1)}
+                                                disabled={page === 1}
+                                            >
+                                                Trước
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handlePageChange(page + 1)}
+                                                disabled={page === totalPages}
+                                            >
+                                                Sau
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
                         )}
                     </CardContent>
                 </Card>
