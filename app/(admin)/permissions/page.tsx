@@ -31,14 +31,7 @@ const isValidEmail = (email: string): boolean => {
     return emailRegex.test(email)
 }
 
-const PermissionForm = ({
-    onAddUser,
-    onCancel,
-    isMobile,
-    isSubmitting,
-    submitError,
-    currentUserRole,
-}: {
+const PermissionForm = ({ onAddUser, onCancel, isMobile, isSubmitting, submitError, currentUserRole }: {
     onAddUser: (email: string, role: UserRole) => void
     onCancel: () => void
     isMobile: boolean
