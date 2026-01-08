@@ -34,33 +34,12 @@ export const CourseInfoForm = ({ course: initialCourse, onUpdate }: { course: Co
     const [formData, setFormData] = useState<Course>(initialCourse);
 
     useEffect(() => {
-        // Use prop as initial, but try to load from localStorage for persistence of edits
-        const stored = localStorage.getItem(`nedu_course_${initialCourse.id}`);
-        if (stored) {
-            try {
-                const parsedData = JSON.parse(stored);
-                setFormData(parsedData);
-            } catch (e) {
-                setFormData(initialCourse);
-            }
-        } else {
-            setFormData(initialCourse);
-        }
+        setFormData(initialCourse);
         setIsLoading(false);
     }, [initialCourse]);
 
     const handleUpdate = (updatedCourse: Course) => {
         setFormData(updatedCourse);
-        localStorage.setItem(`nedu_course_${initialCourse.id}`, JSON.stringify(updatedCourse));
-
-        // Sync with global list
-        const storedList = localStorage.getItem('nedu_courses_list');
-        if (storedList) {
-            const list = JSON.parse(storedList) as Course[];
-            const updatedList = list.map(c => c.id === updatedCourse.id ? { ...c, title: updatedCourse.title, type: updatedCourse.type, status: updatedCourse.status, isFeatured: updatedCourse.isFeatured } : c);
-            localStorage.setItem('nedu_courses_list', JSON.stringify(updatedList));
-        }
-
         setIsEditing(false);
         if (onUpdate) onUpdate();
     };

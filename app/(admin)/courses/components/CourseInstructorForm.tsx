@@ -11,6 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { uploadImage } from '@/lib/supabase/storage';
+import { createClient } from '@/lib/supabase/client';
 
 export const CourseInstructorForm = ({ course, onUpdate }: { course: Course; onUpdate: () => void; }) => {
     const { toast } = useToast();
@@ -30,21 +32,48 @@ export const CourseInstructorForm = ({ course, onUpdate }: { course: Course; onU
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
     useEffect(() => {
-        // Mock loading instructor data
-        const loadInstructor = () => {
-            const mockInstructor = {
-                id: 'ins-1',
-                name: 'Nhi Le',
-                role: 'Cố vấn tâm lý & Doanh nhân',
-                bio: 'Nhi Le đồng hành cùng nhiều người Việt trong hành trình hiểu bản thân, xây dựng nội lực và tạo ra thay đổi bền vững.',
-                avatarUrl: 'https://github.com/shadcn.png'
-            };
-            setInstructor(mockInstructor);
-            setInitialInstructor(mockInstructor);
-            setAvatarPreview(mockInstructor.avatarUrl);
-        };
-        loadInstructor();
-    }, []);
+        fetchInstructor();
+    }, [course.id]);
+
+    const fetchInstructor = async () => {
+        const supabase = createClient();
+
+        // Reset state
+        const empty = { id: undefined, name: '', role: '', bio: '', avatarUrl: '' };
+        setInstructor(empty);
+        setInitialInstructor(empty);
+        setAvatarPreview(null);
+
+        // 1. Get mentor ID from program_mentor junction table
+        const { data: junctionData } = await supabase
+            .from('program_mentor')
+            .select('mentor_id')
+            .eq('program_id', course.id);
+
+        if (junctionData && junctionData.length > 0) {
+            const mentorId = junctionData[0].mentor_id;
+
+            // 2. Fetch mentor details from single mentor table
+            const { data: mentorData } = await supabase
+                .from('mentor')
+                .select('*')
+                .eq('id', mentorId)
+                .single();
+
+            if (mentorData) {
+                const mappedInstructor = {
+                    id: String(mentorData.id),
+                    name: mentorData.name || '',
+                    role: mentorData.role || '',
+                    bio: mentorData.bio || '',
+                    avatarUrl: mentorData.avatar_url || ''
+                };
+                setInstructor(mappedInstructor);
+                setInitialInstructor(mappedInstructor);
+                setAvatarPreview(mappedInstructor.avatarUrl);
+            }
+        }
+    };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -58,7 +87,8 @@ export const CourseInstructorForm = ({ course, onUpdate }: { course: Course; onU
             reader.onloadend = () => {
                 const result = reader.result as string;
                 setAvatarPreview(result);
-                setInstructor(prev => ({ ...prev, avatarUrl: result }));
+                // Store the file to upload later during handleSave
+                (instructor as any)._pendingAvatarFile = file;
             };
             reader.readAsDataURL(file);
         }
@@ -66,16 +96,69 @@ export const CourseInstructorForm = ({ course, onUpdate }: { course: Course; onU
 
     const handleSave = async () => {
         setIsSubmitting(true);
+        const supabase = createClient();
         try {
-            // Simulate API Call
-            await new Promise(resolve => setTimeout(resolve, 800));
+            let avatarUrl = instructor.avatarUrl;
+
+            // 1. Upload avatar if there's a pending file
+            if ((instructor as any)._pendingAvatarFile) {
+                avatarUrl = await uploadImage((instructor as any)._pendingAvatarFile, 'mentors/avatars');
+            }
+
+            let mentorId = instructor.id;
+
+            // Simple CREATE or UPDATE logic
+            if (mentorId && !mentorId.startsWith('ins-')) {
+                // UPDATE
+                const { error: mentorError } = await supabase
+                    .from('mentor')
+                    .update({
+                        name: instructor.name,
+                        role: instructor.role,
+                        bio: instructor.bio,
+                        avatar_url: avatarUrl,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', mentorId);
+
+                if (mentorError) throw mentorError;
+            } else {
+                // CREATE
+                const { data: newMentor, error: mentorError } = await supabase
+                    .from('mentor')
+                    .insert({
+                        name: instructor.name,
+                        role: instructor.role,
+                        bio: instructor.bio,
+                        avatar_url: avatarUrl,
+                        status: 1
+                    })
+                    .select()
+                    .single();
+
+                if (mentorError) throw mentorError;
+                mentorId = String(newMentor.id);
+
+                // Link to course
+                await supabase
+                    .from('program_mentor')
+                    .insert({
+                        program_id: Number(course.id),
+                        mentor_id: Number(mentorId)
+                    });
+            }
+
+            const updatedInstructor = { ...instructor, id: mentorId, avatarUrl };
+            delete (updatedInstructor as any)._pendingAvatarFile;
 
             toast({ title: 'Thành công', description: 'Đã cập nhật thông tin người dẫn đường.' });
-            setInitialInstructor(instructor);
+            setInstructor(updatedInstructor);
+            setInitialInstructor(updatedInstructor);
             setIsEditing(false);
             onUpdate();
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Lỗi', description: 'Không thể cập nhật.' });
+            console.error('Error saving mentor:', error);
+            toast({ variant: 'destructive', title: 'Lỗi', description: 'Không thể cập nhật thông tin người dẫn đường.' });
         } finally {
             setIsSubmitting(false);
         }

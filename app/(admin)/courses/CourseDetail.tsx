@@ -46,7 +46,7 @@ import { Course } from "@/types/admin";
 interface CourseDetailProps {
     course: Course;
     onBack: () => void;
-    onUpdate: () => void;
+    onUpdate: (updatedCourse?: Course) => void;
 }
 
 export const CourseDetail = ({ course, onBack, onUpdate }: CourseDetailProps) => {

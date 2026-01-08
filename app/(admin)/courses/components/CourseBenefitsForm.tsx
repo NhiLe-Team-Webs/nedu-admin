@@ -11,6 +11,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import type { Course, TimelineDay } from "@/types/admin";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 
 interface CourseBenefitsFormProps {
     course: Course;
@@ -25,14 +26,32 @@ export const CourseBenefitsForm = ({ course, onUpdate }: CourseBenefitsFormProps
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        const sortedBenefits = (course.benefits || []).slice().sort((a, b) => {
-            const numA = parseInt(a.id.split('_')[1]) || 0;
-            const numB = parseInt(b.id.split('_')[1]) || 0;
-            return numA - numB;
-        });
-        setBenefits(sortedBenefits);
-        setInitialBenefits(sortedBenefits);
-    }, [course.benefits]);
+        fetchBenefits();
+    }, [course.id]);
+
+    const fetchBenefits = async () => {
+        const supabase = createClient();
+        const { data, error } = await supabase
+            .from('program_description')
+            .select('privilege')
+            .eq('program_id', course.id)
+            .eq('lang_id', 1)
+            .single();
+
+        if (data?.privilege) {
+            const storedBenefits = data.privilege as TimelineDay[];
+            const sortedBenefits = storedBenefits.slice().sort((a, b) => {
+                const numA = parseInt(a.id.split('_')[1]) || 0;
+                const numB = parseInt(b.id.split('_')[1]) || 0;
+                return numA - numB;
+            });
+            setBenefits(sortedBenefits);
+            setInitialBenefits(sortedBenefits);
+        } else {
+            setBenefits([]);
+            setInitialBenefits([]);
+        }
+    };
 
     const handleCancel = () => {
         setBenefits(initialBenefits);
@@ -60,28 +79,23 @@ export const CourseBenefitsForm = ({ course, onUpdate }: CourseBenefitsFormProps
 
     const handleSave = async () => {
         setIsSubmitting(true);
+        const supabase = createClient();
         try {
-            // Simulate API Call
-            await new Promise(resolve => setTimeout(resolve, 800));
+            // Update program_description table (privilege column)
+            const { error } = await supabase
+                .from('program_description')
+                .update({ privilege: benefits })
+                .eq('program_id', course.id)
+                .eq('lang_id', 1);
 
-            const updatedCourse = { ...course, benefits: benefits };
-
-            // 1. Update individual course storage
-            localStorage.setItem(`nedu_course_${course.id}`, JSON.stringify(updatedCourse));
-
-            // 2. Update global course list
-            const storedList = localStorage.getItem('nedu_courses_list');
-            if (storedList) {
-                const list = JSON.parse(storedList) as Course[];
-                const updatedList = list.map(c => c.id === course.id ? updatedCourse : c);
-                localStorage.setItem('nedu_courses_list', JSON.stringify(updatedList));
-            }
+            if (error) throw error;
 
             toast({ title: 'Thành công', description: 'Đã cập nhật lợi ích học viên.' });
             setInitialBenefits(benefits);
             setIsEditing(false);
             onUpdate();
         } catch (error: any) {
+            console.error('Error saving benefits:', error);
             toast({ variant: 'destructive', title: 'Lỗi', description: 'Không thể cập nhật lợi ích.' });
         } finally {
             setIsSubmitting(false);
