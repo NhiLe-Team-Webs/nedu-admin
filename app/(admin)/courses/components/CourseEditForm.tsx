@@ -8,8 +8,16 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import type { Course } from "@/types/admin";
+import { createClient } from "@/lib/supabase/client";
+import { uploadImage } from "@/lib/supabase/storage";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { DateRange } from "react-day-picker";
 
 const formatCurrency = (value: string | number = '') => {
     const numberValue = Number(String(value).replace(/\D/g, ''));
@@ -60,6 +68,19 @@ export const CourseEditForm = ({ course, onUpdate, onCancel }: { course: Course,
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleDateRangeChange = (range: DateRange | undefined) => {
+        setFormData(prev => ({
+            ...prev,
+            startDate: range?.from,
+            endDate: range?.to,
+            schedule: range?.from && range?.to
+                ? `${format(range.from, 'dd/MM/yyyy')} - ${format(range.to, 'dd/MM/yyyy')}`
+                : range?.from
+                    ? format(range.from, 'dd/MM/yyyy')
+                    : ''
+        }));
+    };
+
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
@@ -85,6 +106,16 @@ export const CourseEditForm = ({ course, onUpdate, onCancel }: { course: Course,
     };
 
     const handleUpdateCourse = async () => {
+        const fieldLabels: Record<string, string> = {
+            title: 'Tên khóa học',
+            shortDescription: 'Mô tả ngắn',
+            fee: 'Học phí/Giá',
+            topic: 'Chủ đề',
+            schedule: 'Thời gian',
+            location: 'Địa điểm',
+            studentCount: 'Số lượng học viên'
+        };
+
         const requiredFields: (keyof Omit<Course, 'id' | 'createdAt' | 'thumbnailUrl' | 'thumbnailUrl_9_16' | 'instructorIds' | 'timeline' | 'isFeatured' | 'membershipFee' | 'duration' | 'format' | 'type' | 'videoTestimonials' | 'status'>)[] = [
             'title', 'shortDescription', 'fee', 'topic', 'schedule', 'location', 'studentCount'
         ];
@@ -99,7 +130,7 @@ export const CourseEditForm = ({ course, onUpdate, onCancel }: { course: Course,
                 toast({
                     variant: "destructive",
                     title: "Thông tin chưa đầy đủ",
-                    description: "Vui lòng điền đầy đủ tất cả các trường trước khi cập nhật.",
+                    description: `Vui lòng điền trường: ${fieldLabels[field] || field}`,
                 });
                 return;
             }
@@ -115,36 +146,78 @@ export const CourseEditForm = ({ course, onUpdate, onCancel }: { course: Course,
         }
 
         setIsUploading(true);
+        const supabase = createClient();
 
         try {
-            await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network
-
             const dataToUpdate: Course = { ...formData };
 
-            // Mock Image Upload - using the preview DataURL string as the "url"
-            if (newImage && imagePreview) {
-                dataToUpdate.thumbnailUrl = imagePreview;
+            // 1. Upload horizontal image (16:9) if new
+            if (newImage) {
+                const url = await uploadImage(newImage, 'courses/horizontal');
+                dataToUpdate.thumbnailUrl = url;
             }
 
-            if (newImage916 && imagePreview916) {
-                dataToUpdate.thumbnailUrl_9_16 = imagePreview916;
+            // 2. Upload vertical image (9:16) if new
+            if (newImage916) {
+                const url = await uploadImage(newImage916, 'courses/vertical');
+                dataToUpdate.thumbnailUrl_9_16 = url;
             }
 
-            if (formData.type !== 'Membership') {
-                dataToUpdate.membershipFee = undefined; // or null
+            // 3. Update program table
+            const { error: programError } = await supabase
+                .from('program')
+                .update({
+                    program_name: formData.title,
+                    program_price: Number(formData.fee),
+                    program_type: formData.type === 'Course' ? 1 : 2,
+                    image: dataToUpdate.thumbnailUrl, // Horizontal
+                    banner: dataToUpdate.thumbnailUrl_9_16, // Vertical (mapped to banner column for now)
+                    hashtag: formData.topic,
+                    total_sessions: formData.schedule,
+                    start_date: formData.startDate ? new Date(formData.startDate).toISOString() : null,
+                    end_date: formData.endDate ? new Date(formData.endDate).toISOString() : null,
+                    link_payment: formData.location,
+                    course: Number(formData.studentCount),
+                    status: formData.status === 'published' ? 1 : 0,
+                    highlight_program: formData.isFeatured ? 1 : 0
+                })
+                .eq('id', formData.id);
+
+            if (programError) throw programError;
+
+
+            // 2. Update program_description (lang_id 1 = Vietnamese)
+            const { error: descError } = await supabase
+                .from('program_description')
+                .update({
+                    program_name: formData.title,
+                    topic: formData.topic,
+                    short_description: formData.shortDescription,
+                    // If you have 'content' field in UI, map it here
+                })
+                .eq('program_id', formData.id)
+                .eq('lang_id', 1);
+
+            if (descError) {
+                // If update fails, maybe it doesn't exist yet, try insert
+                await supabase.from('program_description').insert({
+                    program_id: Number(formData.id),
+                    lang_id: 1,
+                    program_name: formData.title,
+                    topic: formData.topic,
+                    short_description: formData.shortDescription
+                });
             }
-
-            dataToUpdate.studentCount = Number(dataToUpdate.studentCount);
-
-            // Call parent update
-            onUpdate(dataToUpdate);
 
             toast({
                 title: "Thành công",
                 description: `Khóa học "${formData.title}" đã được cập nhật.`,
             });
 
+            onUpdate(dataToUpdate);
+
         } catch (err: any) {
+            console.error('Error updating course:', err);
             toast({
                 variant: "destructive",
                 title: "Đã có lỗi xảy ra",
@@ -205,8 +278,43 @@ export const CourseEditForm = ({ course, onUpdate, onCancel }: { course: Course,
                     </Select>
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="schedule" className="uppercase">THỜI GIAN DIỄN RA <span className="text-destructive">*</span></Label>
-                    <Input id="schedule" name="schedule" value={formData.schedule || ''} onChange={handleInputChange} disabled={isUploading} />
+                    <Label className="uppercase">THỜI GIAN DIỄN RA <span className="text-destructive">*</span></Label>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-full justify-start text-left font-normal",
+                                    (!formData.startDate || !formData.endDate) && "text-muted-foreground"
+                                )}
+                                disabled={isUploading}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {formData.startDate && formData.endDate ? (
+                                    <>
+                                        {format(new Date(formData.startDate), "dd/MM/yyyy")} - {format(new Date(formData.endDate), "dd/MM/yyyy")}
+                                    </>
+                                ) : formData.startDate ? (
+                                    format(new Date(formData.startDate), "dd/MM/yyyy")
+                                ) : (
+                                    <span>Chọn ngày bắt đầu - kết thúc</span>
+                                )}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                                initialFocus
+                                mode="range"
+                                defaultMonth={formData.startDate ? new Date(formData.startDate) : undefined}
+                                selected={{
+                                    from: formData.startDate ? new Date(formData.startDate) : undefined,
+                                    to: formData.endDate ? new Date(formData.endDate) : undefined
+                                }}
+                                onSelect={handleDateRangeChange}
+                                numberOfMonths={2}
+                            />
+                        </PopoverContent>
+                    </Popover>
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="location" className="uppercase">Địa điểm học <span className="text-destructive">*</span></Label>

@@ -23,7 +23,14 @@ export type Mentor = {
     cvUrl?: string;
     avatarUrl?: string;
     quote?: string;
+    status?: number;
+    sortOrder?: number;
+    email?: string;
+    phone?: string;
+    socialLinks?: { platform: string; url: string }[];
+    isFeatured?: boolean;
     createdAt: Date | any;
+    updatedAt?: Date | any;
 };
 
 export type VideoTestimonial = {
@@ -75,6 +82,9 @@ export type Course = {
     title: string;
     shortDescription?: string;
     description?: string;
+    content?: string;
+    videoUrl?: string;
+    highlightFeatures?: string[];
     fee?: string | number;
     membershipFee?: string | number;
     type?: 'Membership' | 'Course' | string;
@@ -96,6 +106,8 @@ export type Course = {
     requirements?: string[];
     outcomes?: string[];
     featuredStudent?: FeaturedStudent;
+    startDate?: Date | string;
+    endDate?: Date | string;
     createdAt?: string;
 };
 

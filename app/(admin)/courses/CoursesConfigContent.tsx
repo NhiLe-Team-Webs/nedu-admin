@@ -12,82 +12,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { Course } from "@/types/admin";
-import { CourseDetail } from "./CourseDetail";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../../components/ui/tooltip";
+import { createClient } from "@/lib/supabase/client";
+import type { Course } from "@/types/admin";
+import { CourseDetail } from "./CourseDetail";
 
 // Initial MOCK DATA
-const INITIAL_COURSES: Course[] = [
-    {
-        id: "COURSE-001",
-        title: "Khóa học Fullstack Next.js 14",
-        type: "Course",
-        isFeatured: true,
-        shortDescription: "Học lập trình web từ cơ bản đến nâng cao với Next.js 14.",
-        fee: 1299000,
-        topic: "Lập trình Web",
-        schedule: "Thứ 3-5-7",
-        location: "Online",
-        studentCount: 50,
-        thumbnailUrl: "",
-        thumbnailUrl_9_16: "",
-        instructorIds: ["INS-1"],
-        createdAt: new Date().toISOString()
-    },
-    {
-        id: "COURSE-002",
-        title: "LÀ CHÍNH MÌNH",
-        type: "Membership",
-        isFeatured: false,
-        shortDescription: "Khám phá bản thân và phát triển tư duy.",
-        fee: 599000,
-        topic: "Phát triển cá nhân",
-        schedule: "Linh hoạt",
-        location: "Online",
-        studentCount: 150,
-        thumbnailUrl: "",
-        thumbnailUrl_9_16: "",
-        instructorIds: ["INS-2"],
-        createdAt: new Date().toISOString()
-    },
-    {
-        id: "COURSE-003",
-        title: "Thử Thách 30 Ngày",
-        type: "Course",
-        isFeatured: true,
-        shortDescription: "30 ngày thay đổi tư duy và thói quen quản lý tài chính cá nhân.",
-        fee: 1990000,
-        topic: "Tài chính & Tư duy",
-        schedule: "Hàng ngày (30 ngày)",
-        location: "Online",
-        studentCount: 500,
-        thumbnailUrl: "",
-        thumbnailUrl_9_16: "",
-        instructorIds: ["INS-1"],
-        benefits: [
-            {
-                id: "benefit_1",
-                title: "Nắm rõ thu và chi mỗi tháng",
-                quoteText: "Tiền không khó quản lý, khó là mình không nhìn rõ nó.",
-                quote: "Sau 30 ngày, bạn sẽ biết rõ mỗi tháng tiền đi đâu, vì sao hết tiền và cách để dư ra ít nhất 10-20% thu nhập."
-            },
-            {
-                id: "benefit_2",
-                title: "Chi tiêu có kiểm soát",
-                quoteText: "Xài tiền không sai, xài mà không biết vì sao mới mệt.",
-                quote: "Bạn sẽ bắt đầu suy nghĩ trước khi chi, phân biệt được 'Muốn' và 'Cần', từ đó chấm dứt tình trạng mua sắm bốc đồng."
-            },
-            {
-                id: "benefit_3",
-                title: "Xây dựng thói quen bền vững",
-                quoteText: "Thứ làm bạn mệt không phải tiền, mà là cách xài tiền.",
-                quote: "Hình thành thói quen ghi chép và lập kế hoạch tài chính chỉ với 5 phút mỗi ngày, giúp tâm trí bình an hơn."
-            }
-        ],
-        createdAt: new Date().toISOString()
-    }
-];
+const INITIAL_COURSES: Course[] = [];
 
 const DeleteCourseDialog = ({ course, onConfirm, children }: { course: Course, onConfirm: () => void, children: React.ReactNode }) => {
     const [confirmationInput, setConfirmationInput] = useState('');
@@ -149,7 +81,7 @@ const getMissingCourseFields = (course: Course): string[] => {
     if (!course.shortDescription) missing.push('Mô tả ngắn');
     if (course.fee === undefined || course.fee === null || course.fee === '') missing.push('Giá/Học phí');
     if (!course.topic) missing.push('Chủ đề');
-    if (!course.schedule) missing.push('Thời gian học');
+    if (!course.startDate || !course.endDate) missing.push('Ngày bắt đầu & kết thúc');
     if (!course.location) missing.push('Địa điểm học');
     if (course.studentCount === undefined || course.studentCount === null) missing.push('Số lượng học viên');
     if (!course.thumbnailUrl) missing.push('Hình ảnh (16:9)');
@@ -163,6 +95,7 @@ const getMissingCourseFields = (course: Course): string[] => {
 
 const CourseList = ({ onSelectCourse }: { onSelectCourse: (course: Course) => void; }) => {
     const { toast } = useToast();
+    const supabase = createClient();
     const [courses, setCourses] = useState<Course[]>([]);
     const [loading, setLoading] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
@@ -172,19 +105,65 @@ const CourseList = ({ onSelectCourse }: { onSelectCourse: (course: Course) => vo
     const [newCourseType, setNewCourseType] = useState<string>("Course");
 
     useEffect(() => {
-        const stored = localStorage.getItem('nedu_courses_list');
-        if (stored) {
-            setCourses(JSON.parse(stored));
-        } else {
-            setCourses(INITIAL_COURSES);
-            localStorage.setItem('nedu_courses_list', JSON.stringify(INITIAL_COURSES));
-        }
-        setLoading(false);
+        fetchCourses();
     }, []);
 
-    const saveCourses = (updatedCourses: Course[]) => {
-        setCourses(updatedCourses);
-        localStorage.setItem('nedu_courses_list', JSON.stringify(updatedCourses));
+    const fetchCourses = async () => {
+        setLoading(true);
+        try {
+            // 1. Fetch programs
+            const { data: programsData, error: programsError } = await supabase
+                .from('program')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (programsError) throw programsError;
+
+            // 2. Fetch descriptions separately for Vietnamese (lang_id 1)
+            const { data: descriptionsData, error: descriptionsError } = await supabase
+                .from('program_description')
+                .select('program_id, short_description, topic')
+                .eq('lang_id', 1);
+
+            if (descriptionsError) {
+                console.warn('Could not fetch descriptions:', descriptionsError);
+            }
+
+            if (programsData) {
+                const mappedCourses: Course[] = programsData.map(item => {
+                    const desc = descriptionsData?.find(d => d.program_id === item.id);
+
+                    return {
+                        id: String(item.id),
+                        title: item.program_name || '',
+                        type: item.program_type === 1 ? 'Course' : 'Membership',
+                        isFeatured: item.highlight_program === 1,
+                        fee: item.program_price || 0,
+                        topic: item.hashtag || desc?.topic || "",
+                        schedule: item.total_sessions || "",
+                        location: item.link_payment || "",
+                        studentCount: item.course || 0,
+                        thumbnailUrl: item.image || "",
+                        thumbnailUrl_9_16: item.banner || "",
+                        shortDescription: desc?.short_description || "",
+                        createdAt: item.created_at,
+                        startDate: item.start_date,
+                        endDate: item.end_date,
+                        status: item.status === 1 ? 'published' : 'draft',
+                    };
+                });
+                setCourses(mappedCourses);
+            }
+        } catch (error: any) {
+            console.error('Error fetching courses:', error);
+            toast({
+                variant: 'destructive',
+                title: 'Lỗi',
+                description: 'Không thể lấy danh sách khóa học từ máy chủ.'
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleCreateCourse = async () => {
@@ -198,49 +177,105 @@ const CourseList = ({ onSelectCourse }: { onSelectCourse: (course: Course) => vo
         }
 
         setIsCreating(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 800));
+        try {
+            // 1. Insert into program table
+            const { data: programData, error: programError } = await supabase
+                .from('program')
+                .insert({
+                    program_name: newCourseName,
+                    program_type: newCourseType === 'Course' ? 1 : 2,
+                    status: 0, // Draft
+                    highlight_program: 0,
+                    created_at: new Date().toISOString()
+                })
+                .select()
+                .single();
 
-        const newCourse: Course = {
-            id: `COURSE-${Date.now()}`,
-            title: newCourseName,
-            type: newCourseType,
-            isFeatured: false,
-            status: 'draft',
-            createdAt: new Date().toISOString()
-        };
+            if (programError) throw programError;
 
-        const updatedCourses = [newCourse, ...courses];
-        saveCourses(updatedCourses);
+            // 2. Insert into program_description for default language (assume lang_id: 1 is Vietnamese)
+            if (programData) {
+                const { error: descError } = await supabase
+                    .from('program_description')
+                    .insert({
+                        program_id: programData.id,
+                        lang_id: 1, // Vietnamese by default
+                        program_name: newCourseName,
+                        created_at: new Date().toISOString()
+                    });
 
-        toast({
-            title: 'Thành công',
-            description: `Khóa học "${newCourseName}" đã được tạo.`,
-        });
+                if (descError) {
+                    console.error('Error creating description:', descError);
+                    // We don't throw here to avoid failing the whole process, 
+                    // but in real app we should handle this.
+                }
+            }
 
-        setNewCourseName("");
-        setIsCreateDialogOpen(false);
-        setIsCreating(false);
+            toast({
+                title: 'Thành công',
+                description: `Khóa học "${newCourseName}" đã được tạo.`,
+            });
+
+            setNewCourseName("");
+            setIsCreateDialogOpen(false);
+            fetchCourses(); // Refresh list
+        } catch (error: any) {
+            console.error('Error creating course:', error);
+            toast({
+                variant: 'destructive',
+                title: 'Lỗi',
+                description: error.message || 'Không thể tạo khóa học mới.'
+            });
+        } finally {
+            setIsCreating(false);
+        }
     };
 
-    const handleDeleteCourse = (courseId: string, courseTitle: string) => {
-        const updatedCourses = courses.filter(c => c.id !== courseId);
-        saveCourses(updatedCourses);
-        toast({
-            title: 'Thành công',
-            description: `Khóa học "${courseTitle}" đã được xóa.`,
-        });
+    const handleDeleteCourse = async (courseId: string, courseTitle: string) => {
+        try {
+            const { error } = await supabase
+                .from('program')
+                .delete()
+                .eq('id', courseId);
+
+            if (error) throw error;
+
+            toast({
+                title: 'Thành công',
+                description: `Khóa học "${courseTitle}" đã được xóa.`,
+            });
+            fetchCourses();
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Lỗi',
+                description: 'Không thể xóa khóa học.'
+            });
+        }
     };
 
     const handleToggleFeatured = async (courseId: string, currentStatus: boolean | undefined) => {
         const updatedStatus = !currentStatus;
-        const updatedCourses = courses.map(c => c.id === courseId ? { ...c, isFeatured: updatedStatus } : c);
-        saveCourses(updatedCourses);
+        try {
+            const { error } = await supabase
+                .from('program')
+                .update({ highlight_program: updatedStatus ? 1 : 0 })
+                .eq('id', courseId);
 
-        toast({
-            title: 'Thành công',
-            description: `Đã ${updatedStatus ? 'đánh dấu' : 'bỏ đánh dấu'} nổi bật cho khóa học.`,
-        });
+            if (error) throw error;
+
+            toast({
+                title: 'Thành công',
+                description: `Đã ${updatedStatus ? 'đánh dấu' : 'bỏ đánh dấu'} nổi bật cho khóa học.`,
+            });
+            fetchCourses();
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Lỗi',
+                description: 'Không thể cập nhật trạng thái nổi bật.'
+            });
+        }
     };
 
 
@@ -356,7 +391,6 @@ const CourseList = ({ onSelectCourse }: { onSelectCourse: (course: Course) => vo
                                                                     variant="ghost"
                                                                     size="icon"
                                                                     className="text-muted-foreground hover:text-destructive"
-                                                                    disabled={course.title === 'LÀ CHÍNH MÌNH' || course.title === 'Thử Thách 30 Ngày'}
                                                                 >
                                                                     <Trash2 className="h-4 w-4" />
                                                                 </Button>

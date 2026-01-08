@@ -26,7 +26,7 @@ export const CourseInfoDisplay = ({ course }: { course: Course }) => {
         { label: "HÌNH THỨC", value: course.format || 'Chưa cập nhật' },
         { label: "THỜI GIAN DIỄN RA", value: course.schedule || 'Chưa cập nhật' },
         { label: "ĐỊA ĐIỂM HỌC", value: course.location || 'Chưa cập nhật' },
-        { label: "SỐ LƯỢNG HỌC VIÊN", value: course.studentCount ? String(course.studentCount) : 'Chưa cập nhật' },
+        { label: "SỐ LƯỢNG HỌC VIÊN", value: (course.studentCount !== undefined && course.studentCount !== null) ? String(course.studentCount) : 'Chưa cập nhật' },
     ];
 
     const copyToClipboard = (text: string) => {
