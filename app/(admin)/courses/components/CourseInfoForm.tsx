@@ -51,9 +51,44 @@ export const CourseInfoForm = ({ course: initialCourse, onUpdate }: { course: Co
 
     if (isLoading) {
         return (
-            <div className="space-y-4">
-                <div className="h-64 w-full bg-muted/40 animate-pulse rounded-lg"></div>
-            </div>
+            <Card className="relative overflow-hidden">
+                <CardContent className="pt-6 space-y-6">
+                    {/* ID skeleton */}
+                    <div className="bg-muted/30 p-4 rounded-lg border">
+                        <div className="h-4 w-24 bg-muted animate-pulse rounded mb-2"></div>
+                        <div className="h-5 w-48 bg-muted animate-pulse rounded"></div>
+                    </div>
+
+                    {/* Description skeleton */}
+                    <div className="space-y-2">
+                        <div className="h-4 w-20 bg-muted animate-pulse rounded"></div>
+                        <div className="h-4 w-full bg-muted animate-pulse rounded"></div>
+                        <div className="h-4 w-3/4 bg-muted animate-pulse rounded"></div>
+                    </div>
+
+                    {/* Info items skeleton */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-8">
+                        {[...Array(8)].map((_, idx) => (
+                            <div key={idx} className="space-y-2">
+                                <div className="h-3 w-24 bg-muted animate-pulse rounded"></div>
+                                <div className="h-5 w-32 bg-muted animate-pulse rounded"></div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Images skeleton */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
+                        <div className="space-y-2">
+                            <div className="h-3 w-24 bg-muted animate-pulse rounded"></div>
+                            <div className="w-full aspect-video bg-muted animate-pulse rounded-md"></div>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="h-3 w-24 bg-muted animate-pulse rounded"></div>
+                            <div className="w-1/2 aspect-[9/16] bg-muted animate-pulse rounded-md"></div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
         );
     }
 
@@ -62,7 +97,11 @@ export const CourseInfoForm = ({ course: initialCourse, onUpdate }: { course: Co
             <CardContent className="pt-6">
                 {!isEditing && (
                     <div className="absolute inset-0 bg-gray-100/70 dark:bg-gray-900/70 z-10 flex items-center justify-center rounded-lg">
-                        <Button size="lg" onClick={() => setIsEditing(true)}>
+                        <Button
+                            size="lg"
+                            onClick={() => setIsEditing(true)}
+                            className="bg-[#F7B418] hover:bg-[#e5a616] text-gray-900 font-medium"
+                        >
                             <Edit className="mr-2 h-5 w-5" />
                             Chỉnh sửa
                         </Button>

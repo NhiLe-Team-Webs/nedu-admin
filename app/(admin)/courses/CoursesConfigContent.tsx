@@ -285,7 +285,7 @@ const CourseList = ({ onSelectCourse }: { onSelectCourse: (course: Course) => vo
                 <h1 className="text-2xl font-bold">QUẢN LÝ KHÓA HỌC</h1>
                 <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button className="gap-2">
+                        <Button className="gap-2 bg-[#F7B418] hover:bg-[#e5a616] text-gray-900 font-medium">
                             <PlusCircle className="h-4 w-4" />
                             Thêm khóa học
                         </Button>
