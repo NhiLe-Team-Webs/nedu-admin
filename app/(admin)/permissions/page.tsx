@@ -113,6 +113,7 @@ const PermissionForm = ({
                 <Button
                     onClick={handleAddClick}
                     disabled={!isValidEmail(newUserEmail) || isSubmitting}
+                    className="bg-[#F7B418] hover:bg-[#e5a616] text-gray-900 font-medium"
                 >
                     {isSubmitting ? (
                         <>
@@ -123,6 +124,7 @@ const PermissionForm = ({
                         'Xác nhận'
                     )}
                 </Button>
+
             </div>
         </div>
     )
@@ -375,20 +377,22 @@ export default function PermissionsPage() {
             <div className="space-y-4">
                 {/* Page Header */}
                 <div className="flex justify-between items-center">
-                    <h1 className="text-2xl font-bold uppercase">Phân quyền</h1>
+                    <h1 className="text-2xl font-bold uppercase">PHÂN QUYỀN</h1>
                     {isMobile ? (
-                        <Button onClick={() => setView('form')}>
+                        <Button onClick={() => setView('form')} className="bg-[#F7B418] hover:bg-[#e5a616] text-gray-900 font-medium">
                             <CirclePlus className="mr-2 h-4 w-4" />
                             Thêm
                         </Button>
+
                     ) : (
                         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                             <DialogTrigger asChild>
-                                <Button>
+                                <Button className="bg-[#F7B418] hover:bg-[#e5a616] text-gray-900 font-medium">
                                     <CirclePlus className="mr-2 h-4 w-4" />
                                     Thêm
                                 </Button>
                             </DialogTrigger>
+
                             <DialogContent>
                                 <DialogHeader>
                                     <DialogTitle className="text-primary">THÊM QUẢN TRỊ VIÊN</DialogTitle>
@@ -436,9 +440,10 @@ export default function PermissionsPage() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>EMAIL</TableHead>
-                                            <TableHead className="w-[150px]">VAI TRÒ</TableHead>
+                                            <TableHead className="uppercase">EMAIL</TableHead>
+                                            <TableHead className="w-[150px] uppercase">VAI TRÒ</TableHead>
                                         </TableRow>
+
                                     </TableHeader>
                                     <TableBody>
                                         {users.length === 0 ? (

@@ -152,8 +152,20 @@ const CourseList = ({ onSelectCourse }: { onSelectCourse: (course: Course) => vo
                         status: item.status === 1 ? 'published' : 'draft',
                     };
                 });
-                setCourses(mappedCourses);
+
+                // Filter to only show specific courses (ID 82 or others as needed)
+                const filteredCourses = mappedCourses.filter(course => course.id === '82');
+
+                // Sort: prioritize featured (starred) courses
+                const sortedCourses = filteredCourses.sort((a, b) => {
+                    if (a.isFeatured === b.isFeatured) return 0;
+                    return a.isFeatured ? -1 : 1;
+                });
+
+                setCourses(sortedCourses);
             }
+
+
         } catch (error: any) {
             console.error('Error fetching courses:', error);
             toast({
@@ -282,47 +294,10 @@ const CourseList = ({ onSelectCourse }: { onSelectCourse: (course: Course) => vo
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">QUẢN LÝ KHÓA HỌC</h1>
-                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                    <DialogTrigger asChild>
-                        <Button className="gap-2 bg-[#F7B418] hover:bg-[#e5a616] text-gray-900 font-medium">
-                            <PlusCircle className="h-4 w-4" />
-                            Thêm khóa học
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Tạo khóa học mới</DialogTitle>
-                            <DialogDescription>Nhập tên và mô hình để bắt đầu khởi tạo khóa học.</DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4 py-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="new-course-name">Tên khóa học</Label>
-                                <Input id="new-course-name" value={newCourseName} onChange={(e) => setNewCourseName(e.target.value)} placeholder="VD: Khóa học Digital Marketing" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="new-course-type">Mô hình</Label>
-                                <Select value={newCourseType} onValueChange={setNewCourseType}>
-                                    <SelectTrigger id="new-course-type">
-                                        <SelectValue placeholder="Chọn mô hình" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Course">Khóa học (Course)</SelectItem>
-                                        <SelectItem value="Membership">Membership</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <Button variant="ghost" onClick={() => setIsCreateDialogOpen(false)}>Hủy</Button>
-                            <Button onClick={handleCreateCourse} disabled={isCreating}>
-                                {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Tạo khóa học
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                <h1 className="text-2xl font-bold uppercase">KHÓA HỌC</h1>
             </div>
+
+
 
             <Card>
                 <CardContent className="pt-6">
@@ -357,24 +332,9 @@ const CourseList = ({ onSelectCourse }: { onSelectCourse: (course: Course) => vo
                                                             >
                                                                 {course.title}
                                                             </button>
-                                                            {missingFields.length > 0 && (
-                                                                <Tooltip>
-                                                                    <TooltipTrigger asChild>
-                                                                        <AlertTriangle className="h-4 w-4 text-amber-500 cursor-help" />
-                                                                    </TooltipTrigger>
-                                                                    <TooltipContent side="right">
-                                                                        <p className="font-semibold text-foreground mb-1">Thông tin còn thiếu:</p>
-                                                                        <ul className="list-disc list-inside text-xs text-muted-foreground space-y-0.5">
-                                                                            {missingFields.map(field => <li key={field}>{field}</li>)}
-                                                                        </ul>
-                                                                    </TooltipContent>
-                                                                </Tooltip>
-                                                            )}
                                                         </div>
-                                                        <div className="text-[10px] text-muted-foreground mt-0.5 uppercase flex gap-2">
-                                                            <span>{course.type}</span>
-                                                            {course.status && <span>• {course.status}</span>}
-                                                        </div>
+
+
                                                     </TableCell>
                                                     <TableCell className="text-right">
                                                         <div className="flex justify-end gap-1">
@@ -386,16 +346,8 @@ const CourseList = ({ onSelectCourse }: { onSelectCourse: (course: Course) => vo
                                                             >
                                                                 <Star className={cn("h-4 w-4", course.isFeatured ? "text-yellow-500 fill-yellow-400" : "text-gray-400")} />
                                                             </Button>
-                                                            <DeleteCourseDialog course={course} onConfirm={() => handleDeleteCourse(course.id, course.title)}>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="text-muted-foreground hover:text-destructive"
-                                                                >
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </Button>
-                                                            </DeleteCourseDialog>
                                                         </div>
+
                                                     </TableCell>
                                                 </TableRow>
                                             )
