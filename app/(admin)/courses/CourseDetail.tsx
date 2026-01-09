@@ -60,7 +60,7 @@ export const CourseDetail = ({ course, onBack, onUpdate }: CourseDetailProps) =>
     const renderMobileNav = () => (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button className="w-full justify-between bg-primary text-primary-foreground hover:bg-primary/90">
+                <Button className="w-full justify-between bg-[#F7B418] hover:bg-[#e5a616] text-gray-900 font-medium">
                     {tabConfig[activeTab].label}
                     <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>
