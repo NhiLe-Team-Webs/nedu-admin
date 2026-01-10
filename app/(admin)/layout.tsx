@@ -8,6 +8,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { createClient } from "@/lib/supabase/client"
 import { User } from "@supabase/supabase-js"
+import { ChevronRight } from "lucide-react"
 
 export default function AdminLayout({
     children,
@@ -17,7 +18,7 @@ export default function AdminLayout({
     const isMobile = useIsMobile()
     const router = useRouter()
     const pathname = usePathname()
-    const [isMobileListView, setIsMobileListView] = useState(true)
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
     const [user, setUser] = useState<User | null>(null)
 
     useEffect(() => {
@@ -29,18 +30,9 @@ export default function AdminLayout({
         getUser()
     }, [])
 
-    // On desktop, always show content view
-    useEffect(() => {
-        if (isMobile === false) {
-            setIsMobileListView(false)
-        } else if (isMobile === true) {
-            setIsMobileListView(true)
-        }
-    }, [isMobile])
-
     const handleMenuClick = (href: string) => {
         router.push(href)
-        setIsMobileListView(false)
+        setIsMobileMenuOpen(false)
     }
 
     const handleLogout = async () => {
@@ -49,25 +41,47 @@ export default function AdminLayout({
         router.refresh()
     }
 
-    // Mobile: Show menu list or content
-    if (isMobile) {
-        if (isMobileListView) {
-            return (
-                <MobileNav
-                    user={user}
-                    onMenuClick={handleMenuClick}
-                    onLogout={handleLogout}
-                />
-            )
-        }
+    const handleOpenMenu = () => {
+        setIsMobileMenuOpen(true)
+    }
 
-        // Mobile content view
+    const handleCloseMenu = () => {
+        setIsMobileMenuOpen(false)
+    }
+
+    // Mobile layout
+    if (isMobile) {
         return (
-            <div className="min-h-screen bg-white">
-                <div className="p-5">
-                    {children}
+            <>
+                {/* Mobile Menu Overlay */}
+                {isMobileMenuOpen && (
+                    <MobileNav
+                        user={user}
+                        onMenuClick={handleMenuClick}
+                        onLogout={handleLogout}
+                        onClose={handleCloseMenu}
+                    />
+                )}
+
+                {/* Mobile Content View */}
+                <div className="min-h-screen bg-white">
+                    {/* Floating Menu Button - hidden when menu is open */}
+                    {!isMobileMenuOpen && (
+                        <button
+                            onClick={handleOpenMenu}
+                            className="fixed bottom-6 left-6 z-30 p-3 bg-white rounded-full shadow-2xl border border-gray-100 hover:bg-gray-50 active:bg-gray-100 transition-all duration-200 active:scale-90"
+                            aria-label="Open menu"
+                        >
+                            <ChevronRight className="h-6 w-6 text-[#F7B418]" />
+                        </button>
+                    )}
+
+                    {/* Content */}
+                    <div className="pt-5 px-5 pb-24">
+                        {children}
+                    </div>
                 </div>
-            </div>
+            </>
         )
     }
 
