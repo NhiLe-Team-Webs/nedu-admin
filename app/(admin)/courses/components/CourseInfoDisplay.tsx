@@ -18,7 +18,6 @@ export const CourseInfoDisplay = ({ course }: { course: Course }) => {
     const infoItems = [
         { label: 'TÊN KHÓA HỌC', value: course.title || 'Chưa cập nhật' },
         { label: course.type === 'Membership' ? 'GIÁ THÁNG' : 'HỌC PHÍ', value: course.fee ? `${formatCurrency(course.fee)} VNĐ` : 'Chưa cập nhật' },
-        { label: "MÔ HÌNH", value: course.type || 'Chưa cập nhật' },
         ...(course.type === 'Membership' && course.membershipFee ? [{ label: "GIÁ MEMBERSHIP", value: `${formatCurrency(course.membershipFee)} VNĐ` }] : []),
         { label: "CHỦ ĐỀ", value: course.topic || 'Chưa cập nhật' },
         { label: "HÌNH THỨC", value: course.format || 'Chưa cập nhật' },
@@ -45,7 +44,7 @@ export const CourseInfoDisplay = ({ course }: { course: Course }) => {
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex gap-6 items-start">
                 <div>
                     <Label className="text-sm text-muted-foreground uppercase">Hình ảnh (16:9)</Label>
                     <div className="mt-2 w-48 h-32 flex items-center justify-center rounded-md border bg-muted overflow-hidden relative">
