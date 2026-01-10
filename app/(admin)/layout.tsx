@@ -61,17 +61,10 @@ export default function AdminLayout({
             )
         }
 
-        // Mobile content view - no back button needed (device has native back)
+        // Mobile content view
         return (
-            <div className="min-h-screen bg-gray-50">
-                {/* Mobile Header */}
-                <div className="sticky top-0 z-40 bg-white border-b shadow-sm">
-                    <div className="flex items-center justify-center h-14 px-4">
-                        <span className="font-semibold text-gray-900">N-EDU Admin</span>
-                    </div>
-                </div>
-                {/* Content */}
-                <div className="p-4">
+            <div className="min-h-screen bg-white">
+                <div className="p-5">
                     {children}
                 </div>
             </div>

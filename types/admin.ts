@@ -79,6 +79,7 @@ export type FeaturedStudent = {
 
 export type Course = {
     id: string;
+    slug?: string;
     title: string;
     shortDescription?: string;
     description?: string;
