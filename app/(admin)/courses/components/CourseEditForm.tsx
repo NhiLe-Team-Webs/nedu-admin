@@ -46,21 +46,6 @@ export const CourseEditForm = ({ course, onUpdate, onCancel }: { course: Course,
         setNewImage(null);
         setImagePreview916(course.thumbnailUrl_9_16 || null);
         setNewImage916(null);
-
-        const fetchThirtyDayConfig = async () => {
-            if (course.id === '82' || (course.title && course.title.toLowerCase().includes('30 ngày'))) {
-                const supabase = createClient();
-                const { data } = await supabase.from('thirty_day_config').select('*').eq('program_id', course.id).single();
-                if (data) {
-                    setFormData(prev => ({
-                        ...prev,
-                        fee: data.monthly_fee,
-                        membershipFee: data.membership_fee
-                    }));
-                }
-            }
-        };
-        fetchThirtyDayConfig();
     }, [course]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -199,19 +184,6 @@ export const CourseEditForm = ({ course, onUpdate, onCancel }: { course: Course,
                 .eq('id', formData.id);
 
             if (programError) throw programError;
-
-            // NEW: Update thirty_day_config for 30-day challenge
-            if (formData.id === '82' || (formData.title && formData.title.toLowerCase().includes('30 ngày'))) {
-                const { error: configError } = await supabase
-                    .from('thirty_day_config')
-                    .upsert({
-                        program_id: Number(formData.id),
-                        monthly_fee: Number(formData.fee),
-                        membership_fee: Number(formData.membershipFee)
-                    }, { onConflict: 'program_id' });
-
-                if (configError) throw configError;
-            }
 
 
             // 2. Update program_description (lang_id 1 = Vietnamese)
