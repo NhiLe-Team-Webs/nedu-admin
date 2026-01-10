@@ -213,38 +213,34 @@ export const CourseEditForm = ({ course, onUpdate, onCancel }: { course: Course,
 
 
             // 2. Update program_description (lang_id 1 = Vietnamese)
-            const { error: descError } = await supabase
+            const { data: descData, error: descError } = await supabase
                 .from('program_description')
                 .update({
                     program_name: formData.title,
                     topic: formData.topic,
                     short_description: formData.shortDescription,
+                    format: formData.format,
                 })
-                .eq('program_id', formData.id)
-                .eq('lang_id', 1);
+                .eq('program_id', Number(formData.id))
+                .eq('lang_id', 1)
+                .select();
 
-            if (descError) {
-                console.warn('[STUDENT_COUNT_DEBUG] Description update error (will try insert):', descError);
-                // If update fails, maybe it doesn't exist yet, try insert
-                await supabase.from('program_description').insert({
+            console.log('[DEBUG] program_description update result:', { descData, descError, formData: { shortDescription: formData.shortDescription, format: formData.format } });
+
+            if (descError || !descData || descData.length === 0) {
+                console.warn('[DEBUG] Description update failed or no rows, trying insert:', descError);
+                // If update fails or no rows updated, maybe it doesn't exist yet, try insert
+                const { error: insertError } = await supabase.from('program_description').insert({
                     program_id: Number(formData.id),
                     lang_id: 1,
                     program_name: formData.title,
                     topic: formData.topic,
                     short_description: formData.shortDescription,
-                    course_type: formData.type || 'Course',
-                    is_featured: formData.isFeatured || false
+                    format: formData.format,
                 });
-            } else {
-                // Update course_type and is_featured
-                await supabase
-                    .from('program_description')
-                    .update({
-                        course_type: formData.type || 'Course',
-                        is_featured: formData.isFeatured || false
-                    })
-                    .eq('program_id', formData.id)
-                    .eq('lang_id', 1);
+                if (insertError) {
+                    console.error('[DEBUG] Insert also failed:', insertError);
+                }
             }
 
             // If this is the 30-day challenge course, update the pricing table
@@ -317,18 +313,6 @@ export const CourseEditForm = ({ course, onUpdate, onCancel }: { course: Course,
                     </div>
                 )}
                 <div className="space-y-2">
-                    <Label htmlFor="type" className="uppercase text-xs font-bold">MÔ HÌNH <span className="text-destructive">*</span></Label>
-                    <Select name="type" value={formData.type || 'Course'} onValueChange={(value) => handleSelectChange('type', value)} disabled={isUploading}>
-                        <SelectTrigger id="type">
-                            <SelectValue placeholder="Chọn mô hình" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="Course">Khóa học thông thường</SelectItem>
-                            <SelectItem value="Membership">Khóa học Membership</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="space-y-2">
                     <Label htmlFor="topic" className="uppercase text-xs font-bold">Chủ đề <span className="text-destructive">*</span></Label>
                     <Input id="topic" name="topic" value={formData.topic || ''} onChange={handleInputChange} disabled={isUploading} />
                 </div>
@@ -357,7 +341,6 @@ export const CourseEditForm = ({ course, onUpdate, onCancel }: { course: Course,
                     <Label htmlFor="studentCount" className="uppercase text-xs font-bold">Số lượng học viên <span className="text-destructive">*</span></Label>
                     <Input id="studentCount" name="studentCount" type="number" value={formData.studentCount || ''} onChange={handleStudentCountChange} disabled={isUploading} />
                 </div>
-
                 <div className="space-y-3">
                     <Label className="uppercase text-xs font-bold">Hình ảnh (16:9)</Label>
                     <div className="relative group w-48 h-32 rounded-md overflow-hidden border bg-muted">

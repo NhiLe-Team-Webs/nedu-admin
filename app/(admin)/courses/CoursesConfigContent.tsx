@@ -260,7 +260,7 @@ export const CoursesConfigContent = ({ selectedCourse, onSelectCourse }: Courses
 
             const { data: descriptionsData } = await supabase
                 .from('program_description')
-                .select('program_id, short_description, topic, course_type, is_featured')
+                .select('program_id, short_description, topic, is_featured, format')
                 .eq('lang_id', 1);
 
             const { data: challengeData } = await supabase
@@ -275,7 +275,7 @@ export const CoursesConfigContent = ({ selectedCourse, onSelectCourse }: Courses
                     return {
                         id: String(item.id),
                         title: item.program_name || '',
-                        type: desc?.course_type || (item.program_type === 1 ? 'Course' : 'Membership'),
+                        type: item.program_type === 1 ? 'Course' : 'Membership',
                         isFeatured: desc?.is_featured ?? (item.highlight_program === 1),
                         fee: challenge?.monthly_price ?? (item.program_price || 0),
                         membershipFee: challenge?.membership_price,
@@ -286,6 +286,7 @@ export const CoursesConfigContent = ({ selectedCourse, onSelectCourse }: Courses
                         thumbnailUrl: item.image || "",
                         thumbnailUrl_9_16: item.banner || "",
                         shortDescription: desc?.short_description || "",
+                        format: desc?.format || "",
                         createdAt: item.created_at,
                         startDate: item.start_date,
                         endDate: item.end_date,
@@ -349,9 +350,10 @@ export const CoursesConfigContent = ({ selectedCourse, onSelectCourse }: Courses
         }
     };
 
-    const handleUpdate = (updatedCourse?: Course) => {
+    const handleUpdate = async (updatedCourse?: Course) => {
         // Trigger a re-fetch to ensure all state is consistent with DB
-        fetchCourses();
+        // fetchCourses already handles updating selectedCourse at lines 305-311
+        await fetchCourses();
     };
 
     if (selectedCourse) {
