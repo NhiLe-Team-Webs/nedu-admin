@@ -39,6 +39,7 @@ export async function GET(request: Request) {
         const { data: admins, error, count } = await supabase
             .from('admin_users')
             .select('id, email, full_name, role, is_active, created_at, updated_at', { count: 'exact' })
+            .contains('departments', ['admin'])
             .order('created_at', { ascending: false })
             .range(from, to)
 
@@ -117,20 +118,46 @@ export async function POST(request: Request) {
         // Check if email already exists
         const { data: existingAdmin } = await supabase
             .from('admin_users')
-            .select('id')
+            .select('id, departments')
             .eq('email', email)
             .single()
 
         if (existingAdmin) {
-            return NextResponse.json(
-                { error: 'Email đã tồn tại' },
-                { status: 409 }
-            )
+            const departments = existingAdmin.departments || []
+            const hasAdmin = departments.some((d: string) => d.toLowerCase() === 'admin')
+
+            if (hasAdmin) {
+                return NextResponse.json(
+                    { error: 'Email đã tồn tại' },
+                    { status: 409 }
+                )
+            }
+
+            // If not in sale department, update it
+            const { data: updatedUser, error: updateError } = await supabase
+                .from('admin_users')
+                .update({
+                    departments: [...departments, 'admin']
+                })
+                .eq('id', existingAdmin.id)
+                .select('id, email, full_name, role, is_active, created_at, updated_at')
+                .single()
+
+            if (updateError) {
+                console.error('Error updating admin departments:', updateError)
+                return NextResponse.json(
+                    { error: 'Không thể cập nhật phòng ban', details: updateError.message },
+                    { status: 500 }
+                )
+            }
+
+            return NextResponse.json({
+                success: true,
+                data: updatedUser,
+                message: 'Đã cập nhật thêm quyền admin cho tài khoản'
+            })
         }
 
-        // For now, use a default password or the provided one
-        // In production, you should hash the password properly
-        const defaultPassword = password || 'ChangeMe123!'
 
         // Insert new admin
         const { data: newAdmin, error: insertError } = await supabase
@@ -139,7 +166,7 @@ export async function POST(request: Request) {
                 email,
                 full_name: full_name || null,
                 role,
-                password_hash: defaultPassword, // TODO: Implement proper password hashing
+                departments: ['admin'],
                 is_active: true
             })
             .select('id, email, full_name, role, is_active, created_at, updated_at')
@@ -262,7 +289,7 @@ export async function DELETE(request: Request) {
         // Get admin info before deleting
         const { data: adminToDelete } = await supabase
             .from('admin_users')
-            .select('email, role')
+            .select('email, role, departments')
             .eq('id', id)
             .single()
 
@@ -275,7 +302,36 @@ export async function DELETE(request: Request) {
             )
         }
 
-        // Delete admin
+        const departments = adminToDelete?.departments || []
+        // Filter out 'admin' (case insensitive)
+        const remainingDepartments = departments.filter((d: string) => d.toLowerCase() !== 'admin')
+
+
+        if (remainingDepartments.length > 0) {
+            // If other departments exist, update to remove 'sale'
+            const { error: updateError } = await supabase
+                .from('admin_users')
+                .update({
+                    departments: remainingDepartments
+                })
+                .eq('id', id)
+
+            if (updateError) {
+                console.error('Error removing sale department:', updateError)
+                return NextResponse.json(
+                    { error: 'Không thể cập nhật quyền', details: updateError.message },
+                    { status: 500 }
+                )
+            }
+
+            return NextResponse.json({
+                success: true,
+                message: 'Đã gỡ quyền admin khỏi người dùng'
+            })
+        }
+
+        // If 'admin' was the only one (or empty), delete the user
+
         const { error: deleteError } = await supabase
             .from('admin_users')
             .delete()
