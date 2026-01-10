@@ -1,18 +1,21 @@
 import type { Metadata } from "next";
-// import { Inter } from "next/font/google";
+import { Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
+import { cn } from "@/lib/utils";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { Toaster } from "sonner";
 
-// const inter = Inter({ subsets: ["latin"] });
+
+const beVietnamPro = Be_Vietnam_Pro({
+    weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+    subsets: ["vietnamese"],
+    variable: '--font-sans',
+    display: "swap",
+});
 
 export const metadata: Metadata = {
-    title: "N-edu Admin",
-    description: "N-edu Admin Dashboard",
-    icons: {
-        icon: '/favicon.svg',
-    },
+    title: "Nedu Admin",
+    description: "Nedu Admin Dashboard",
 };
 
 export default function RootLayout({
@@ -21,11 +24,11 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en">
-            <body className="">
+        <html lang="vi" suppressHydrationWarning>
+            <body className={cn("font-sans antialiased", beVietnamPro.variable, beVietnamPro.className)}>
                 {children}
                 <ToastContainer />
-                <Toaster />
+
             </body>
         </html>
     );

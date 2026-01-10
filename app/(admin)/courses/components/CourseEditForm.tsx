@@ -55,8 +55,14 @@ export const CourseEditForm = ({ course, onUpdate, onCancel }: { course: Course,
 
     const handleFeeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const rawValue = e.target.value.replace(/\D/g, '');
-        // Store as number if possible, or keep as clean string if empty
-        setFormData(prev => ({ ...prev, fee: rawValue ? Number(rawValue) : '' }));
+        setFormData(prev => ({ ...prev, fee: rawValue ? Number(rawValue) : 0 }));
+    };
+
+    const handleStudentCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const rawValue = e.target.value.replace(/\D/g, '');
+        const numValue = rawValue ? Number(rawValue) : 0;
+        console.log(`[DEBUG] studentCount change: raw="${rawValue}", num=${numValue}`);
+        setFormData(prev => ({ ...prev, studentCount: numValue }));
     };
 
     const handleMembershipFeeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,7 +170,9 @@ export const CourseEditForm = ({ course, onUpdate, onCancel }: { course: Course,
             }
 
             // 3. Update program table
-            const { error: programError } = await supabase
+            console.log(`[STUDENT_COUNT_DEBUG] Sending update for program id: ${formData.id}, studentCount: ${formData.studentCount}`);
+
+            const { data: updatedProgram, error: programError } = await supabase
                 .from('program')
                 .update({
                     program_name: formData.title,
@@ -181,9 +189,27 @@ export const CourseEditForm = ({ course, onUpdate, onCancel }: { course: Course,
                     status: formData.status === 'published' ? 1 : 0,
                     highlight_program: formData.isFeatured ? 1 : 0
                 })
-                .eq('id', formData.id);
+                .eq('id', formData.id)
+                .select()
+                .single();
 
-            if (programError) throw programError;
+            if (programError) {
+                console.error('[STUDENT_COUNT_DEBUG] Program update error:', programError);
+                throw programError;
+            }
+
+            if (updatedProgram) {
+                console.log(`[STUDENT_COUNT_DEBUG] Supabase returned updated program:`, {
+                    id: updatedProgram.id,
+                    program_name: updatedProgram.program_name,
+                    course: updatedProgram.course,
+                    sent_value: Number(formData.studentCount)
+                });
+
+                if (Number(updatedProgram.course) !== Number(formData.studentCount)) {
+                    console.warn(`[STUDENT_COUNT_DEBUG] DISCREPANCY DETECTED! Sent ${formData.studentCount}, but DB has ${updatedProgram.course}`);
+                }
+            }
 
 
             // 2. Update program_description (lang_id 1 = Vietnamese)
@@ -193,20 +219,50 @@ export const CourseEditForm = ({ course, onUpdate, onCancel }: { course: Course,
                     program_name: formData.title,
                     topic: formData.topic,
                     short_description: formData.shortDescription,
-                    // If you have 'content' field in UI, map it here
                 })
                 .eq('program_id', formData.id)
                 .eq('lang_id', 1);
 
             if (descError) {
+                console.warn('[STUDENT_COUNT_DEBUG] Description update error (will try insert):', descError);
                 // If update fails, maybe it doesn't exist yet, try insert
                 await supabase.from('program_description').insert({
                     program_id: Number(formData.id),
                     lang_id: 1,
                     program_name: formData.title,
                     topic: formData.topic,
-                    short_description: formData.shortDescription
+                    short_description: formData.shortDescription,
+                    course_type: formData.type || 'Course',
+                    is_featured: formData.isFeatured || false
                 });
+            } else {
+                // Update course_type and is_featured
+                await supabase
+                    .from('program_description')
+                    .update({
+                        course_type: formData.type || 'Course',
+                        is_featured: formData.isFeatured || false
+                    })
+                    .eq('program_id', formData.id)
+                    .eq('lang_id', 1);
+            }
+
+            // If this is the 30-day challenge course, update the pricing table
+            const THIRTY_DAY_CHALLENGE_ID = 82;
+            if (Number(formData.id) === THIRTY_DAY_CHALLENGE_ID) {
+                console.log(`[STUDENT_COUNT_DEBUG] Updating program_30day_challenge for id: ${formData.id}`);
+                const { error: challengeError } = await supabase
+                    .from('program_30day_challenge')
+                    .upsert({
+                        program_id: Number(formData.id),
+                        monthly_price: Number(formData.fee) || 0,
+                        membership_price: Number(formData.membershipFee) || 0,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'program_id' });
+
+                if (challengeError) {
+                    console.error('[STUDENT_COUNT_DEBUG] program_30day_challenge update error:', challengeError);
+                }
             }
 
             toast({
@@ -217,7 +273,7 @@ export const CourseEditForm = ({ course, onUpdate, onCancel }: { course: Course,
             onUpdate(dataToUpdate);
 
         } catch (err: any) {
-            console.error('Error updating course:', err);
+            console.error('[STUDENT_COUNT_DEBUG] Final catch error:', err);
             toast({
                 variant: "destructive",
                 title: "Đã có lỗi xảy ra",
@@ -229,13 +285,13 @@ export const CourseEditForm = ({ course, onUpdate, onCancel }: { course: Course,
     };
 
     return (
-        <div className="space-y-8 bg-card p-6 rounded-lg border shadow-sm">
+        <div className="space-y-8">
             <div className="space-y-2 lg:col-span-2">
-                <Label htmlFor="title" className="uppercase">Tên khóa học <span className="text-destructive">*</span></Label>
+                <Label htmlFor="title" className="uppercase text-xs font-bold">Tên khóa học <span className="text-destructive">*</span></Label>
                 <Input id="title" name="title" value={formData.title} onChange={handleInputChange} disabled={isUploading} />
             </div>
             <div className="space-y-2">
-                <Label htmlFor="shortDescription" className="uppercase">Mô tả ngắn <span className="text-destructive">*</span></Label>
+                <Label htmlFor="shortDescription" className="uppercase text-xs font-bold">Mô tả ngắn <span className="text-destructive">*</span></Label>
                 <Textarea
                     id="shortDescription"
                     name="shortDescription"
@@ -249,23 +305,35 @@ export const CourseEditForm = ({ course, onUpdate, onCancel }: { course: Course,
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                    <Label htmlFor="fee" className="uppercase">
+                    <Label htmlFor="fee" className="uppercase text-xs font-bold">
                         {formData.type === 'Membership' ? 'GIÁ THÁNG' : 'HỌC PHÍ'} <span className="text-destructive">*</span>
                     </Label>
                     <Input id="fee" name="fee" value={formatCurrency(formData.fee)} onChange={handleFeeChange} disabled={isUploading} />
                 </div>
                 {formData.type === 'Membership' && (
                     <div className="space-y-2">
-                        <Label htmlFor="membershipFee" className="uppercase">Giá Membership <span className="text-destructive">*</span></Label>
+                        <Label htmlFor="membershipFee" className="uppercase text-xs font-bold">Giá Membership <span className="text-destructive">*</span></Label>
                         <Input id="membershipFee" name="membershipFee" value={formatCurrency(formData.membershipFee)} onChange={handleMembershipFeeChange} disabled={isUploading} />
                     </div>
                 )}
                 <div className="space-y-2">
-                    <Label htmlFor="topic" className="uppercase">Chủ đề <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="type" className="uppercase text-xs font-bold">MÔ HÌNH <span className="text-destructive">*</span></Label>
+                    <Select name="type" value={formData.type || 'Course'} onValueChange={(value) => handleSelectChange('type', value)} disabled={isUploading}>
+                        <SelectTrigger id="type">
+                            <SelectValue placeholder="Chọn mô hình" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="Course">Khóa học thông thường</SelectItem>
+                            <SelectItem value="Membership">Khóa học Membership</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="topic" className="uppercase text-xs font-bold">Chủ đề <span className="text-destructive">*</span></Label>
                     <Input id="topic" name="topic" value={formData.topic || ''} onChange={handleInputChange} disabled={isUploading} />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="format" className="uppercase">HÌNH THỨC <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="format" className="uppercase text-xs font-bold">HÌNH THỨC <span className="text-destructive">*</span></Label>
                     <Select name="format" value={formData.format || ''} onValueChange={(value) => handleSelectChange('format', value)} disabled={isUploading}>
                         <SelectTrigger id="format">
                             <SelectValue placeholder="Chọn hình thức" />
@@ -278,57 +346,20 @@ export const CourseEditForm = ({ course, onUpdate, onCancel }: { course: Course,
                     </Select>
                 </div>
                 <div className="space-y-2">
-                    <Label className="uppercase">THỜI GIAN DIỄN RA <span className="text-destructive">*</span></Label>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant={"outline"}
-                                className={cn(
-                                    "w-full justify-start text-left font-normal",
-                                    (!formData.startDate || !formData.endDate) && "text-muted-foreground"
-                                )}
-                                disabled={isUploading}
-                            >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {formData.startDate && formData.endDate ? (
-                                    <>
-                                        {format(new Date(formData.startDate), "dd/MM/yyyy")} - {format(new Date(formData.endDate), "dd/MM/yyyy")}
-                                    </>
-                                ) : formData.startDate ? (
-                                    format(new Date(formData.startDate), "dd/MM/yyyy")
-                                ) : (
-                                    <span>Chọn ngày bắt đầu - kết thúc</span>
-                                )}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                                initialFocus
-                                mode="range"
-                                defaultMonth={formData.startDate ? new Date(formData.startDate) : undefined}
-                                selected={{
-                                    from: formData.startDate ? new Date(formData.startDate) : undefined,
-                                    to: formData.endDate ? new Date(formData.endDate) : undefined
-                                }}
-                                onSelect={handleDateRangeChange}
-                                numberOfMonths={2}
-                            />
-                        </PopoverContent>
-                    </Popover>
+                    <Label htmlFor="schedule" className="uppercase text-xs font-bold">THỜI GIAN DIỄN RA <span className="text-destructive">*</span></Label>
+                    <Input id="schedule" name="schedule" value={formData.schedule || ''} onChange={handleInputChange} disabled={isUploading} placeholder="VD: 30 ngày, 2/4/6 hàng tuần..." />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="location" className="uppercase">Địa điểm học <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="location" className="uppercase text-xs font-bold">Địa điểm học <span className="text-destructive">*</span></Label>
                     <Input id="location" name="location" value={formData.location || ''} onChange={handleInputChange} disabled={isUploading} />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="studentCount" className="uppercase">Số lượng học viên <span className="text-destructive">*</span></Label>
-                    <Input id="studentCount" name="studentCount" type="number" value={formData.studentCount || ''} onChange={handleInputChange} disabled={isUploading} />
+                    <Label htmlFor="studentCount" className="uppercase text-xs font-bold">Số lượng học viên <span className="text-destructive">*</span></Label>
+                    <Input id="studentCount" name="studentCount" type="number" value={formData.studentCount || ''} onChange={handleStudentCountChange} disabled={isUploading} />
                 </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="space-y-3">
-                    <Label className="uppercase">Hình ảnh (16:9)</Label>
+                    <Label className="uppercase text-xs font-bold">Hình ảnh (16:9)</Label>
                     <div className="relative group w-48 h-32 rounded-md overflow-hidden border bg-muted">
                         {imagePreview ? (
                             <Image src={imagePreview} alt="Xem trước" fill className="object-cover" />
@@ -346,7 +377,7 @@ export const CourseEditForm = ({ course, onUpdate, onCancel }: { course: Course,
                     <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden" disabled={isUploading} />
                 </div>
                 <div className="space-y-3">
-                    <Label className="uppercase">Hình ảnh (9:16)</Label>
+                    <Label className="uppercase text-xs font-bold">Hình ảnh (9:16)</Label>
                     <div className="relative group w-32 h-48 rounded-md overflow-hidden border bg-muted">
                         {imagePreview916 ? (
                             <Image src={imagePreview916} alt="Xem trước 9:16" fill className="object-cover" />
@@ -364,12 +395,13 @@ export const CourseEditForm = ({ course, onUpdate, onCancel }: { course: Course,
                     <input type="file" ref={fileInput916Ref} onChange={handleImage916Change} accept="image/*" className="hidden" disabled={isUploading} />
                 </div>
             </div>
-            <div className="flex space-x-4">
+
+            <div className="flex justify-end space-x-4">
+                <Button size="lg" variant="destructive" onClick={onCancel} disabled={isUploading}>
+                    Hủy
+                </Button>
                 <Button size="lg" onClick={handleUpdateCourse} disabled={isUploading}>
                     {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Cập nhật'}
-                </Button>
-                <Button size="lg" variant="outline" onClick={onCancel} disabled={isUploading}>
-                    Hủy
                 </Button>
             </div>
         </div>
