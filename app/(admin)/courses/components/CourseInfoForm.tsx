@@ -36,6 +36,22 @@ export const CourseInfoForm = ({ course: initialCourse, onUpdate }: { course: Co
     useEffect(() => {
         setFormData(initialCourse);
         setIsLoading(false);
+
+        const fetchThirtyDayConfig = async () => {
+            if (initialCourse.id === '82' || (initialCourse.title && initialCourse.title.toLowerCase().includes('30 ngày'))) {
+                const { createClient } = await import("@/lib/supabase/client");
+                const supabase = createClient();
+                const { data } = await supabase.from('thirty_day_config').select('*').eq('program_id', initialCourse.id).single();
+                if (data) {
+                    setFormData(prev => ({
+                        ...prev,
+                        fee: data.monthly_fee,
+                        membershipFee: data.membership_fee
+                    }));
+                }
+            }
+        };
+        fetchThirtyDayConfig();
     }, [initialCourse]);
 
     const handleUpdate = (updatedCourse: Course) => {
