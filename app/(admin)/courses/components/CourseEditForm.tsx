@@ -379,11 +379,22 @@ export const CourseEditForm = ({ course, onUpdate, onCancel }: { course: Course,
                 </div>
             </div>
 
-            <div className="flex justify-end space-x-4">
-                <Button size="lg" variant="destructive" onClick={onCancel} disabled={isUploading}>
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t">
+                <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={onCancel}
+                    disabled={isUploading}
+                    className="w-full sm:w-auto rounded-xl"
+                >
                     Hủy
                 </Button>
-                <Button size="lg" onClick={handleUpdateCourse} disabled={isUploading}>
+                <Button
+                    size="lg"
+                    onClick={handleUpdateCourse}
+                    disabled={isUploading}
+                    className="w-full sm:w-auto bg-[#F7B418] hover:bg-[#e5a616] text-gray-900 font-medium rounded-xl"
+                >
                     {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Cập nhật'}
                 </Button>
             </div>

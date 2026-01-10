@@ -254,9 +254,20 @@ export const CourseInstructorForm = ({ course, onUpdate, isEditing, setIsEditing
             </div>
 
             {isEditing && (
-                <div className="flex justify-end gap-2 border-t pt-4">
-                    <Button variant="ghost" onClick={handleCancel} disabled={isSubmitting}>Hủy</Button>
-                    <Button onClick={handleSave} disabled={isSubmitting} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 border-t pt-4">
+                    <Button
+                        variant="outline"
+                        onClick={handleCancel}
+                        disabled={isSubmitting}
+                        className="w-full sm:w-auto rounded-xl"
+                    >
+                        Hủy
+                    </Button>
+                    <Button
+                        onClick={handleSave}
+                        disabled={isSubmitting}
+                        className="w-full sm:w-auto bg-[#F7B418] hover:bg-[#e5a616] text-gray-900 font-medium rounded-xl"
+                    >
                         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                         Cập nhật
                     </Button>

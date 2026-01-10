@@ -17,6 +17,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../
 import { createClient } from "@/lib/supabase/client";
 import type { Course } from "@/types/admin";
 import { CourseDetail } from "./CourseDetail";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { ChevronRight } from "lucide-react";
 
 // Initial MOCK DATA
 const INITIAL_COURSES: Course[] = [];
@@ -171,68 +173,119 @@ const CourseList = ({
         }
     };
 
+    const isMobile = useIsMobile();
+
+    // Mobile Card Layout
+    const renderMobileList = () => (
+        <div className="space-y-3">
+            {loading ? (
+                <>
+                    <Skeleton className="h-16 w-full rounded-xl" />
+                    <Skeleton className="h-16 w-full rounded-xl" />
+                    <Skeleton className="h-16 w-full rounded-xl" />
+                </>
+            ) : courses.length === 0 ? (
+                <div className="text-center text-muted-foreground py-12">
+                    Chưa có khóa học nào.
+                </div>
+            ) : (
+                courses.map((course) => (
+                    <button
+                        key={course.id}
+                        onClick={() => onSelectCourse(course)}
+                        className={cn(
+                            "w-full bg-white rounded-xl p-4 shadow-sm border",
+                            "flex items-center justify-between",
+                            "transition-all duration-200 ease-out",
+                            "hover:shadow-md active:scale-[0.98]",
+                            "text-left group"
+                        )}
+                    >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                            {course.isFeatured && (
+                                <Star className="h-4 w-4 text-yellow-500 fill-yellow-400 flex-shrink-0" />
+                            )}
+                            <span className="font-medium text-gray-900 truncate">
+                                {course.title}
+                            </span>
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-primary group-hover:translate-x-0.5 transition-all flex-shrink-0 ml-2" />
+                    </button>
+                ))
+            )}
+        </div>
+    );
+
+    // Desktop Table Layout
+    const renderDesktopList = () => (
+        <Card className="rounded-xl">
+            <CardContent className="pt-6">
+                <TooltipProvider delayDuration={0}>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="uppercase">Tên khóa học</TableHead>
+                                <TableHead className="text-right uppercase">Hành động</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {loading ? (
+                                <>
+                                    <TableRow><TableCell colSpan={2}><Skeleton className="h-12 w-full" /></TableCell></TableRow>
+                                    <TableRow><TableCell colSpan={2}><Skeleton className="h-12 w-full" /></TableCell></TableRow>
+                                    <TableRow><TableCell colSpan={2}><Skeleton className="h-12 w-full" /></TableCell></TableRow>
+                                </>
+                            ) : (
+                                <>
+                                    {courses.length === 0 && <TableRow><TableCell colSpan={2} className="text-center text-muted-foreground py-8">Chưa có khóa học nào.</TableCell></TableRow>}
+
+                                    {courses.map((course) => {
+                                        return (
+                                            <TableRow key={course.id} className="group">
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => onSelectCourse(course)}
+                                                            className="font-medium hover:underline text-primary text-left"
+                                                        >
+                                                            {course.title}
+                                                        </button>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex justify-end gap-1">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => onToggleFeatured(course.id, course.isFeatured)}
+                                                            title={course.isFeatured ? "Bỏ nổi bật" : "Đánh dấu nổi bật"}
+                                                        >
+                                                            <Star className={cn("h-4 w-4", course.isFeatured ? "text-yellow-500 fill-yellow-400" : "text-gray-400")} />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })}
+                                </>
+                            )}
+                        </TableBody>
+                    </Table>
+                </TooltipProvider>
+            </CardContent>
+        </Card>
+    );
+
     return (
-        <div>
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold uppercase">KHÓA HỌC</h1>
+        <div className="space-y-4">
+            <div className="flex justify-between items-center">
+                <h1 className={cn(
+                    "font-bold uppercase",
+                    isMobile ? "text-xl" : "text-2xl"
+                )}>KHÓA HỌC</h1>
             </div>
 
-            <Card>
-                <CardContent className="pt-6">
-                    <TooltipProvider delayDuration={0}>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="uppercase">Tên khóa học</TableHead>
-                                    <TableHead className="text-right uppercase">Hành động</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {loading ? (
-                                    <>
-                                        <TableRow><TableCell colSpan={2}><Skeleton className="h-12 w-full" /></TableCell></TableRow>
-                                        <TableRow><TableCell colSpan={2}><Skeleton className="h-12 w-full" /></TableCell></TableRow>
-                                        <TableRow><TableCell colSpan={2}><Skeleton className="h-12 w-full" /></TableCell></TableRow>
-                                    </>
-                                ) : (
-                                    <>
-                                        {courses.length === 0 && <TableRow><TableCell colSpan={2} className="text-center text-muted-foreground py-8">Chưa có khóa học nào.</TableCell></TableRow>}
-
-                                        {courses.map((course) => {
-                                            return (
-                                                <TableRow key={course.id} className="group">
-                                                    <TableCell>
-                                                        <div className="flex items-center gap-2">
-                                                            <button
-                                                                onClick={() => onSelectCourse(course)}
-                                                                className="font-medium hover:underline text-primary text-left"
-                                                            >
-                                                                {course.title}
-                                                            </button>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
-                                                        <div className="flex justify-end gap-1">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                onClick={() => onToggleFeatured(course.id, course.isFeatured)}
-                                                                title={course.isFeatured ? "Bỏ nổi bật" : "Đánh dấu nổi bật"}
-                                                            >
-                                                                <Star className={cn("h-4 w-4", course.isFeatured ? "text-yellow-500 fill-yellow-400" : "text-gray-400")} />
-                                                            </Button>
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            )
-                                        })}
-                                    </>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </TooltipProvider>
-                </CardContent>
-            </Card>
+            {isMobile ? renderMobileList() : renderDesktopList()}
         </div>
     )
 }
@@ -356,14 +409,22 @@ export const CoursesConfigContent = ({ selectedCourse, onSelectCourse }: Courses
         await fetchCourses();
     };
 
+    const isMobileView = useIsMobile();
+
     if (selectedCourse) {
         return (
             <div className="space-y-6">
                 <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => onSelectCourse(null)}>
-                        <ArrowLeft className="h-6 w-6" />
-                    </Button>
-                    <h1 className="text-2xl font-bold text-primary uppercase">
+                    {/* Hide back button on mobile - device has native back */}
+                    {!isMobileView && (
+                        <Button variant="ghost" size="icon" onClick={() => onSelectCourse(null)}>
+                            <ArrowLeft className="h-6 w-6" />
+                        </Button>
+                    )}
+                    <h1 className={cn(
+                        "font-bold text-primary uppercase",
+                        isMobileView ? "text-xl" : "text-2xl"
+                    )}>
                         {selectedCourse.title}
                     </h1>
                 </div>

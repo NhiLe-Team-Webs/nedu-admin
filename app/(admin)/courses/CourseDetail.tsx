@@ -86,17 +86,32 @@ export const CourseDetail = ({ course, onBack, onUpdate }: CourseDetailProps) =>
         }
     }
 
+
     const renderMobileNav = () => (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button className="w-full justify-between bg-primary text-primary-foreground hover:bg-primary/90">
-                    {tabConfig[activeTab].label}
-                    <ChevronDown className="ml-2 h-4 w-4" />
+                <Button
+                    className="w-full justify-between bg-[#F7B418] hover:bg-[#e5a616] text-gray-900 font-medium h-12 rounded-xl shadow-sm"
+                >
+                    <span className="text-base">{tabConfig[activeTab].label}</span>
+                    <ChevronDown className="ml-2 h-5 w-5 transition-transform duration-200" />
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)]">
+            <DropdownMenuContent
+                align="start"
+                className="w-[var(--radix-dropdown-menu-trigger-width)] rounded-xl shadow-lg border-0 p-2"
+            >
                 {Object.entries(tabConfig).map(([key, { label }]) => (
-                    <DropdownMenuItem key={key} onSelect={() => setActiveTab(key as CourseTab)}>
+                    <DropdownMenuItem
+                        key={key}
+                        onSelect={() => setActiveTab(key as CourseTab)}
+                        className={cn(
+                            "rounded-lg py-3 px-4 text-base cursor-pointer transition-colors",
+                            activeTab === key
+                                ? "bg-primary/10 text-primary font-medium"
+                                : "hover:bg-gray-100"
+                        )}
+                    >
                         {label}
                     </DropdownMenuItem>
                 ))}
@@ -116,33 +131,52 @@ export const CourseDetail = ({ course, onBack, onUpdate }: CourseDetailProps) =>
         </Tabs>
     );
 
+
     return (
-        <div>
-            <div className={cn("w-full mb-6", isMobile ? "w-full" : "md:w-auto")}>
+        <div className="space-y-4">
+            <div className={cn("w-full", isMobile ? "mb-4" : "mb-6 md:w-auto")}>
                 {isMobile ? renderMobileNav() : renderDesktopNav()}
             </div>
 
-            <Card className="border shadow-sm relative overflow-hidden">
-                <CardContent className="pt-6 relative">
+            <Card className={cn(
+                "border shadow-sm relative overflow-hidden",
+                isMobile ? "rounded-xl" : "rounded-lg"
+            )}>
+                <CardContent className={cn(
+                    "relative",
+                    isMobile ? "p-4 pt-4" : "pt-6"
+                )}>
                     {activeTab === 'info' && !isEditingInfo && (
-                        <div className="absolute inset-0 bg-gray-100/70 dark:bg-gray-900/70 z-10 flex items-center justify-center rounded-lg">
-                            <Button size="lg" onClick={() => setIsEditingInfo(true)}>
+                        <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                            <Button
+                                size="lg"
+                                onClick={() => setIsEditingInfo(true)}
+                                className="bg-[#F7B418] hover:bg-[#e5a616] text-gray-900 font-medium rounded-xl shadow-md px-6 py-3 h-auto"
+                            >
                                 <Edit className="mr-2 h-5 w-5" />
                                 Chỉnh sửa
                             </Button>
                         </div>
                     )}
                     {activeTab === 'timeline' && !isEditingTimeline && (
-                        <div className="absolute inset-0 bg-gray-100/70 dark:bg-gray-900/70 z-10 flex items-center justify-center rounded-lg">
-                            <Button size="lg" onClick={() => setIsEditingTimeline(true)}>
+                        <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                            <Button
+                                size="lg"
+                                onClick={() => setIsEditingTimeline(true)}
+                                className="bg-[#F7B418] hover:bg-[#e5a616] text-gray-900 font-medium rounded-xl shadow-md px-6 py-3 h-auto"
+                            >
                                 <Edit className="mr-2 h-5 w-5" />
                                 Chỉnh sửa
                             </Button>
                         </div>
                     )}
                     {activeTab === 'customer-info' && !isEditingMentors && (
-                        <div className="absolute inset-0 bg-gray-100/70 dark:bg-gray-900/70 z-10 flex items-center justify-center rounded-lg">
-                            <Button size="lg" onClick={() => setIsEditingMentors(true)}>
+                        <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                            <Button
+                                size="lg"
+                                onClick={() => setIsEditingMentors(true)}
+                                className="bg-[#F7B418] hover:bg-[#e5a616] text-gray-900 font-medium rounded-xl shadow-md px-6 py-3 h-auto"
+                            >
                                 <Edit className="mr-2 h-5 w-5" />
                                 Chỉnh sửa
                             </Button>
