@@ -354,10 +354,10 @@ export default function PermissionsPage() {
     // Mobile form view
     if (isMobile && view === 'form') {
         return (
-            <div className="p-4">
-                <Card>
-                    <CardContent className="pt-6">
-                        <h2 className="text-xl font-bold mb-4 text-primary">THÊM QUẢN TRỊ VIÊN</h2>
+            <div className="space-y-4">
+                <Card className="rounded-xl shadow-sm border">
+                    <CardContent className="pt-6 pb-4">
+                        <h2 className="text-xl font-bold mb-4 text-primary uppercase">Thêm quản trị viên</h2>
                         <PermissionForm
                             onAddUser={handleAddUser}
                             onCancel={() => setView('list')}
@@ -372,156 +372,161 @@ export default function PermissionsPage() {
         )
     }
 
+
     return (
-        <div className="p-4">
-            <div className="space-y-4">
-                {/* Page Header */}
-                <div className="flex justify-between items-center">
-                    <h1 className="text-2xl font-bold uppercase">PHÂN QUYỀN</h1>
-                    {isMobile ? (
-                        <Button onClick={() => setView('form')} className="bg-[#F7B418] hover:bg-[#e5a616] text-gray-900 font-medium">
-                            <CirclePlus className="mr-2 h-4 w-4" />
-                            Thêm
-                        </Button>
+        <div className="space-y-4">
+            {/* Page Header */}
+            <div className="flex justify-between items-center">
+                <h1 className={cn(
+                    "font-bold uppercase",
+                    isMobile ? "text-xl" : "text-2xl"
+                )}>PHÂN QUYỀN</h1>
+                {isMobile ? (
+                    <Button
+                        onClick={() => setView('form')}
+                        className="bg-[#F7B418] hover:bg-[#e5a616] text-gray-900 font-medium rounded-xl h-10 px-4"
+                    >
+                        <CirclePlus className="mr-2 h-4 w-4" />
+                        Thêm
+                    </Button>
 
+                ) : (
+                    <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button className="bg-[#F7B418] hover:bg-[#e5a616] text-gray-900 font-medium">
+                                <CirclePlus className="mr-2 h-4 w-4" />
+                                Thêm
+                            </Button>
+                        </DialogTrigger>
+
+                        <DialogContent className="rounded-xl">
+                            <DialogHeader>
+                                <DialogTitle className="text-primary uppercase">Thêm quản trị viên</DialogTitle>
+                            </DialogHeader>
+                            <PermissionForm
+                                onAddUser={handleAddUser}
+                                onCancel={() => setIsCreateDialogOpen(false)}
+                                isMobile={false}
+                                isSubmitting={isSubmitting}
+                                submitError={submitError}
+                                currentUserRole={currentUserRole}
+                            />
+                        </DialogContent>
+                    </Dialog>
+                )}
+            </div>
+
+            {/* Permissions Table */}
+            <Card className={cn(isMobile ? "rounded-xl" : "rounded-lg")}>
+                <CardContent className="pt-6">
+                    {isLoading ? (
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <Skeleton className="h-10 w-[200px]" />
+                                <Skeleton className="h-10 w-[100px]" />
+                            </div>
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                    ) : error ? (
+                        <div className="text-center py-8">
+                            <p className="text-destructive font-medium">{error}</p>
+                            <Button
+                                variant="outline"
+                                className="mt-4"
+                                onClick={() => window.location.reload()}
+                            >
+                                Thử lại
+                            </Button>
+                        </div>
                     ) : (
-                        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                            <DialogTrigger asChild>
-                                <Button className="bg-[#F7B418] hover:bg-[#e5a616] text-gray-900 font-medium">
-                                    <CirclePlus className="mr-2 h-4 w-4" />
-                                    Thêm
-                                </Button>
-                            </DialogTrigger>
+                        <>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="uppercase">EMAIL</TableHead>
+                                        <TableHead className="w-[150px] uppercase">VAI TRÒ</TableHead>
+                                    </TableRow>
 
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle className="text-primary">THÊM QUẢN TRỊ VIÊN</DialogTitle>
-                                </DialogHeader>
-                                <PermissionForm
-                                    onAddUser={handleAddUser}
-                                    onCancel={() => setIsCreateDialogOpen(false)}
-                                    isMobile={false}
-                                    isSubmitting={isSubmitting}
-                                    submitError={submitError}
-                                    currentUserRole={currentUserRole}
-                                />
-                            </DialogContent>
-                        </Dialog>
-                    )}
-                </div>
-
-                {/* Permissions Table */}
-                <Card>
-                    <CardContent className="pt-6">
-                        {isLoading ? (
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <Skeleton className="h-10 w-[200px]" />
-                                    <Skeleton className="h-10 w-[100px]" />
-                                </div>
-                                <Skeleton className="h-10 w-full" />
-                                <Skeleton className="h-10 w-full" />
-                                <Skeleton className="h-10 w-full" />
-                                <Skeleton className="h-10 w-full" />
-                            </div>
-                        ) : error ? (
-                            <div className="text-center py-8">
-                                <p className="text-destructive font-medium">{error}</p>
-                                <Button
-                                    variant="outline"
-                                    className="mt-4"
-                                    onClick={() => window.location.reload()}
-                                >
-                                    Thử lại
-                                </Button>
-                            </div>
-                        ) : (
-                            <>
-                                <Table>
-                                    <TableHeader>
+                                </TableHeader>
+                                <TableBody>
+                                    {users.length === 0 ? (
                                         <TableRow>
-                                            <TableHead className="uppercase">EMAIL</TableHead>
-                                            <TableHead className="w-[150px] uppercase">VAI TRÒ</TableHead>
+                                            <TableCell colSpan={2} className="text-center text-muted-foreground py-8">
+                                                Chưa có admin nào
+                                            </TableCell>
                                         </TableRow>
-
-                                    </TableHeader>
-                                    <TableBody>
-                                        {users.length === 0 ? (
-                                            <TableRow>
-                                                <TableCell colSpan={2} className="text-center text-muted-foreground py-8">
-                                                    Chưa có admin nào
+                                    ) : (
+                                        users.map((user) => (
+                                            <TableRow key={user.id}>
+                                                <TableCell className="font-medium">{user.email}</TableCell>
+                                                <TableCell>
+                                                    <Select
+                                                        value={user.role}
+                                                        onValueChange={(value: UserRole | 'Remove') =>
+                                                            handleRoleChange(user.id, value)
+                                                        }
+                                                        disabled={currentUserRole !== 'owner'}
+                                                    >
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Chọn quyền" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="owner">Owner</SelectItem>
+                                                            <SelectItem value="admin">Admin</SelectItem>
+                                                            {currentUserRole === 'owner' && (
+                                                                <SelectItem
+                                                                    value="Remove"
+                                                                    className="text-destructive-foreground bg-destructive hover:bg-destructive/90 focus:bg-destructive focus:text-destructive-foreground"
+                                                                >
+                                                                    Gỡ
+                                                                </SelectItem>
+                                                            )}
+                                                        </SelectContent>
+                                                    </Select>
                                                 </TableCell>
                                             </TableRow>
-                                        ) : (
-                                            users.map((user) => (
-                                                <TableRow key={user.id}>
-                                                    <TableCell className="font-medium">{user.email}</TableCell>
-                                                    <TableCell>
-                                                        <Select
-                                                            value={user.role}
-                                                            onValueChange={(value: UserRole | 'Remove') =>
-                                                                handleRoleChange(user.id, value)
-                                                            }
-                                                            disabled={currentUserRole !== 'owner'}
-                                                        >
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Chọn quyền" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="owner">Owner</SelectItem>
-                                                                <SelectItem value="admin">Admin</SelectItem>
-                                                                {currentUserRole === 'owner' && (
-                                                                    <SelectItem
-                                                                        value="Remove"
-                                                                        className="text-destructive-foreground bg-destructive hover:bg-destructive/90 focus:bg-destructive focus:text-destructive-foreground"
-                                                                    >
-                                                                        Gỡ
-                                                                    </SelectItem>
-                                                                )}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))
-                                        )}
-                                    </TableBody>
-                                </Table>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
 
-                                {/* Pagination Controls */}
-                                {totalPages > 1 && (
-                                    <div className="flex items-center justify-end space-x-2 py-4">
-                                        <div className="flex-1 text-sm text-muted-foreground">
-                                            Trang {page} / {totalPages}
-                                        </div>
-                                        <div className="space-x-2">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handlePageChange(page - 1)}
-                                                disabled={page === 1}
-                                            >
-                                                Trước
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handlePageChange(page + 1)}
-                                                disabled={page === totalPages}
-                                            >
-                                                Sau
-                                            </Button>
-                                        </div>
+                            {/* Pagination Controls */}
+                            {totalPages > 1 && (
+                                <div className="flex items-center justify-end space-x-2 py-4">
+                                    <div className="flex-1 text-sm text-muted-foreground">
+                                        Trang {page} / {totalPages}
                                     </div>
-                                )}
-                            </>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
+                                    <div className="space-x-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handlePageChange(page - 1)}
+                                            disabled={page === 1}
+                                        >
+                                            Trước
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handlePageChange(page + 1)}
+                                            disabled={page === totalPages}
+                                        >
+                                            Sau
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </CardContent>
+            </Card>
 
             {/* Remove User Confirmation Dialog */}
             <AlertDialog open={!!userToRemove} onOpenChange={(open) => !open && setUserToRemove(null)}>
-                <AlertDialogContent>
+                <AlertDialogContent className="rounded-xl">
                     <AlertDialogHeader>
                         <AlertDialogTitle>Xác nhận gỡ bỏ</AlertDialogTitle>
                         <AlertDialogDescription>
@@ -529,9 +534,14 @@ export default function PermissionsPage() {
                             <span className="font-medium">{userToRemove?.email}</span>?
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
+                    <AlertDialogFooter className={cn(isMobile && "flex-col-reverse gap-2")}>
                         <AlertDialogCancel onClick={() => setUserToRemove(null)}>Hủy</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmRemoveUser}>Xác nhận</AlertDialogAction>
+                        <AlertDialogAction
+                            onClick={confirmRemoveUser}
+                            className="bg-destructive hover:bg-destructive/90"
+                        >
+                            Xác nhận
+                        </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

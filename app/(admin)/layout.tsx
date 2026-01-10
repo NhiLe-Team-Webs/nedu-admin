@@ -8,8 +8,6 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { createClient } from "@/lib/supabase/client"
 import { User } from "@supabase/supabase-js"
-import { ArrowLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
 
 export default function AdminLayout({
     children,
@@ -51,10 +49,6 @@ export default function AdminLayout({
         router.refresh()
     }
 
-    const handleBack = () => {
-        setIsMobileListView(true)
-    }
-
     // Mobile: Show menu list or content
     if (isMobile) {
         if (isMobileListView) {
@@ -67,18 +61,17 @@ export default function AdminLayout({
             )
         }
 
-        // Mobile content view with back button
+        // Mobile content view - no back button needed (device has native back)
         return (
-            <div className="min-h-screen">
+            <div className="min-h-screen bg-gray-50">
+                {/* Mobile Header */}
+                <div className="sticky top-0 z-40 bg-white border-b shadow-sm">
+                    <div className="flex items-center justify-center h-14 px-4">
+                        <span className="font-semibold text-gray-900">N-EDU Admin</span>
+                    </div>
+                </div>
+                {/* Content */}
                 <div className="p-4">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={handleBack}
-                        className="mb-4"
-                    >
-                        <ArrowLeft className="h-6 w-6" />
-                    </Button>
                     {children}
                 </div>
             </div>
