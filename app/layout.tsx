@@ -16,6 +16,11 @@ const beVietnamPro = Be_Vietnam_Pro({
 export const metadata: Metadata = {
     title: "Nedu Admin",
     description: "Nedu Admin Dashboard",
+    icons: {
+        icon: '/logo-mobile.svg',
+        shortcut: '/logo-mobile.svg',
+        apple: '/logo-mobile.svg',
+    },
 };
 
 export default function RootLayout({

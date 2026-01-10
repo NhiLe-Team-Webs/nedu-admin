@@ -16,9 +16,9 @@ const COURSE_ID = 82;
 
 // Tab configuration
 const tabConfig = {
-    information: { label: 'THÔNG TIN', path: 'information' },
-    benefit: { label: 'LỢI ÍCH', path: 'benefit' },
-    mentor: { label: 'THÔNG TIN KHÁCH HÀNG', path: 'mentor' },
+    information: { label: 'THÔNG TIN KHÓA HỌC', path: 'information' },
+    benefit: { label: 'LỢI ÍCH HỌC VIÊN', path: 'benefit' },
+    mentor: { label: 'NGƯỜI DẪN ĐƯỜNG', path: 'mentor' },
 } as const;
 
 type TabKey = keyof typeof tabConfig;
