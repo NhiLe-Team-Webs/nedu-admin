@@ -2,54 +2,115 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2, X, Loader2, Edit, Check } from "lucide-react";
+import { Loader2, Check } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import type { Course, TimelineDay } from "@/types/admin";
+import type { Course } from "@/types/admin";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 
+// Type for the fixed 3 benefits structure from program_30day_challenge table
+interface Benefit30Day {
+    title: string;
+    quote: string;
+    description: string;
+}
+
 interface CourseBenefitsFormProps {
     course: Course;
     onUpdate: () => void;
+    isEditing: boolean;
+    setIsEditing: (isEditing: boolean) => void;
 }
 
-export const CourseBenefitsForm = ({ course, onUpdate }: CourseBenefitsFormProps) => {
+// ID for 30-day challenge course
+const THIRTY_DAY_CHALLENGE_PROGRAM_ID = 82;
+
+export const CourseBenefitsForm = ({ course, onUpdate, isEditing, setIsEditing }: CourseBenefitsFormProps) => {
     const { toast } = useToast();
-    const [isEditing, setIsEditing] = useState(false);
-    const [benefits, setBenefits] = useState<TimelineDay[]>([]);
-    const [initialBenefits, setInitialBenefits] = useState<TimelineDay[]>([]);
+    const [benefits, setBenefits] = useState<Benefit30Day[]>([
+        { title: '', quote: '', description: '' },
+        { title: '', quote: '', description: '' },
+        { title: '', quote: '', description: '' }
+    ]);
+    const [initialBenefits, setInitialBenefits] = useState<Benefit30Day[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [is30DayChallenge, setIs30DayChallenge] = useState(false);
 
     useEffect(() => {
-        fetchBenefits();
+        // Check if this is the 30-day challenge course
+        const isChallengeProgram = Number(course.id) === THIRTY_DAY_CHALLENGE_PROGRAM_ID;
+        setIs30DayChallenge(isChallengeProgram);
+
+        if (isChallengeProgram) {
+            fetch30DayBenefits();
+        } else {
+            fetchLegacyBenefits();
+        }
     }, [course.id]);
 
-    const fetchBenefits = async () => {
+    // Fetch from new program_30day_challenge table
+    const fetch30DayBenefits = async () => {
         const supabase = createClient();
         const { data, error } = await supabase
+            .from('program_30day_challenge')
+            .select('*')
+            .eq('program_id', course.id)
+            .single();
+
+        if (data) {
+            const loadedBenefits: Benefit30Day[] = [
+                { title: data.benefit_1_title || '', quote: data.benefit_1_quote || '', description: data.benefit_1_description || '' },
+                { title: data.benefit_2_title || '', quote: data.benefit_2_quote || '', description: data.benefit_2_description || '' },
+                { title: data.benefit_3_title || '', quote: data.benefit_3_quote || '', description: data.benefit_3_description || '' }
+            ];
+            setBenefits(loadedBenefits);
+            setInitialBenefits(loadedBenefits);
+        } else {
+            // Initialize with empty benefits
+            const emptyBenefits: Benefit30Day[] = [
+                { title: '', quote: '', description: '' },
+                { title: '', quote: '', description: '' },
+                { title: '', quote: '', description: '' }
+            ];
+            setBenefits(emptyBenefits);
+            setInitialBenefits(emptyBenefits);
+        }
+    };
+
+    // Legacy: Fetch from program_description.privilege (for non-30-day courses)
+    const fetchLegacyBenefits = async () => {
+        const supabase = createClient();
+        const { data } = await supabase
             .from('program_description')
             .select('privilege')
             .eq('program_id', course.id)
             .eq('lang_id', 1)
             .single();
 
-        if (data?.privilege) {
-            const storedBenefits = data.privilege as TimelineDay[];
-            const sortedBenefits = storedBenefits.slice().sort((a, b) => {
-                const numA = parseInt(a.id.split('_')[1]) || 0;
-                const numB = parseInt(b.id.split('_')[1]) || 0;
-                return numA - numB;
-            });
-            setBenefits(sortedBenefits);
-            setInitialBenefits(sortedBenefits);
+        if (data?.privilege && Array.isArray(data.privilege)) {
+            const storedBenefits = data.privilege.slice(0, 3).map((b: any) => ({
+                title: b.title || '',
+                quote: b.quoteText || '',
+                description: b.quote || ''
+            }));
+            // Pad to 3 if less
+            while (storedBenefits.length < 3) {
+                storedBenefits.push({ title: '', quote: '', description: '' });
+            }
+            setBenefits(storedBenefits);
+            setInitialBenefits(storedBenefits);
         } else {
-            setBenefits([]);
-            setInitialBenefits([]);
+            const emptyBenefits: Benefit30Day[] = [
+                { title: '', quote: '', description: '' },
+                { title: '', quote: '', description: '' },
+                { title: '', quote: '', description: '' }
+            ];
+            setBenefits(emptyBenefits);
+            setInitialBenefits(emptyBenefits);
         }
     };
 
@@ -58,37 +119,50 @@ export const CourseBenefitsForm = ({ course, onUpdate }: CourseBenefitsFormProps
         setIsEditing(false);
     };
 
-    const handleBenefitChange = (id: string, field: keyof TimelineDay, value: string) => {
-        setBenefits(benefits.map(benefit => benefit.id === id ? { ...benefit, [field]: value } : benefit));
-    };
-
-    const handleAddBenefit = () => {
-        const newId = `benefit_${Date.now()}`;
-        const newBenefit: TimelineDay = {
-            id: newId,
-            title: `Lợi ích mới`,
-            quoteText: '',
-            quote: ''
-        };
-        setBenefits([...benefits, newBenefit]);
-    };
-
-    const handleRemoveBenefit = (id: string) => {
-        setBenefits(benefits.filter(benefit => benefit.id !== id));
+    const handleBenefitChange = (index: number, field: keyof Benefit30Day, value: string) => {
+        setBenefits(benefits.map((benefit, i) => i === index ? { ...benefit, [field]: value } : benefit));
     };
 
     const handleSave = async () => {
         setIsSubmitting(true);
         const supabase = createClient();
         try {
-            // Update program_description table (privilege column)
-            const { error } = await supabase
-                .from('program_description')
-                .update({ privilege: benefits })
-                .eq('program_id', course.id)
-                .eq('lang_id', 1);
+            if (is30DayChallenge) {
+                // Save to program_30day_challenge table
+                const { error } = await supabase
+                    .from('program_30day_challenge')
+                    .upsert({
+                        program_id: Number(course.id),
+                        benefit_1_title: benefits[0].title,
+                        benefit_1_quote: benefits[0].quote,
+                        benefit_1_description: benefits[0].description,
+                        benefit_2_title: benefits[1].title,
+                        benefit_2_quote: benefits[1].quote,
+                        benefit_2_description: benefits[1].description,
+                        benefit_3_title: benefits[2].title,
+                        benefit_3_quote: benefits[2].quote,
+                        benefit_3_description: benefits[2].description,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'program_id' });
 
-            if (error) throw error;
+                if (error) throw error;
+            } else {
+                // Legacy: Save to program_description.privilege
+                const privilegeData = benefits.map((b, i) => ({
+                    id: `benefit_${i + 1}`,
+                    title: b.title,
+                    quoteText: b.quote,
+                    quote: b.description
+                }));
+
+                const { error } = await supabase
+                    .from('program_description')
+                    .update({ privilege: privilegeData })
+                    .eq('program_id', course.id)
+                    .eq('lang_id', 1);
+
+                if (error) throw error;
+            }
 
             toast({ title: 'Thành công', description: 'Đã cập nhật lợi ích học viên.' });
             setInitialBenefits(benefits);
@@ -103,74 +177,47 @@ export const CourseBenefitsForm = ({ course, onUpdate }: CourseBenefitsFormProps
     };
 
     return (
-        <Card className="relative overflow-hidden">
-            <CardContent className="pt-6">
-                {!isEditing && (
-                    <div className="absolute inset-0 bg-gray-100/70 dark:bg-gray-900/70 z-10 flex items-center justify-center rounded-lg">
-                        <Button size="lg" onClick={() => setIsEditing(true)}>
-                            <Edit className="mr-2 h-5 w-5" />
-                            Chỉnh sửa
-                        </Button>
-                    </div>
-                )}
-
-                <Accordion type="multiple" className="w-full space-y-4">
-                    {benefits.map((benefit, index) => (
-                        <AccordionItem key={benefit.id} value={benefit.id} className="rounded-lg border bg-secondary/30 px-4">
-                            <div className="flex items-center gap-2">
-                                <AccordionTrigger className={cn("flex-1 text-left hover:no-underline py-4 font-semibold", "data-[state=open]:text-primary")} disabled={!isEditing}>
-                                    {benefit.title || `LỢI ÍCH ${index + 1}`}
-                                </AccordionTrigger>
-                                {isEditing && (
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemoveBenefit(benefit.id)}>
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                )}
+        <div className="space-y-6">
+            <Accordion type="multiple" className="w-full space-y-4">
+                {benefits.map((benefit, index) => (
+                    <AccordionItem key={`benefit-${index}`} value={`benefit-${index}`} className="rounded-lg border bg-card px-4">
+                        <AccordionTrigger className={cn("flex-1 text-left hover:no-underline py-4 font-semibold uppercase", "data-[state=open]:text-primary")} disabled={!isEditing}>
+                            LỢI ÍCH {index + 1}
+                        </AccordionTrigger>
+                        <AccordionContent className="pb-4 pt-0 space-y-4 border-t mt-0">
+                            <div className="space-y-4 pt-4">
+                                <div className="space-y-1">
+                                    <Label htmlFor={`title-${index}`} className="uppercase text-xs font-bold text-foreground/70">TIÊU ĐỀ</Label>
+                                    <Input id={`title-${index}`} value={benefit.title} onChange={(e) => handleBenefitChange(index, 'title', e.target.value)} readOnly={!isEditing} placeholder="Nhập tiêu đề lợi ích..." />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label htmlFor={`quote-${index}`} className="uppercase text-xs font-bold text-foreground/70">QUOTE</Label>
+                                    <Input id={`quote-${index}`} value={benefit.quote} onChange={(e) => handleBenefitChange(index, 'quote', e.target.value)} readOnly={!isEditing} placeholder="Câu trích dẫn ngắn..." />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label htmlFor={`description-${index}`} className="uppercase text-xs font-bold text-foreground/70">MÔ TẢ</Label>
+                                    <Textarea id={`description-${index}`} value={benefit.description} onChange={(e) => handleBenefitChange(index, 'description', e.target.value)} readOnly={!isEditing} rows={4} placeholder="Mô tả chi tiết về lợi ích..." className="resize-none" />
+                                </div>
                             </div>
-                            <AccordionContent className="pb-4 pt-0 space-y-4 border-t mt-0">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor={`title-${benefit.id}`} className="uppercase text-xs font-bold">Tiêu đề</Label>
-                                        <Input id={`title-${benefit.id}`} value={benefit.title || ''} onChange={(e) => handleBenefitChange(benefit.id, 'title', e.target.value)} readOnly={!isEditing} placeholder="Nhập tiêu đề lợi ích..." />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor={`quote-text-${benefit.id}`} className="uppercase text-xs font-bold">Quote ngắn (Phụ đề)</Label>
-                                        <Input id={`quote-text-${benefit.id}`} value={benefit.quoteText || ''} onChange={(e) => handleBenefitChange(benefit.id, 'quoteText', e.target.value)} readOnly={!isEditing} placeholder="Câu trích dẫn ngắn..." />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor={`quote-${benefit.id}`} className="uppercase text-xs font-bold">Mô tả chi tiết</Label>
-                                    <Textarea id={`quote-${benefit.id}`} value={benefit.quote || ''} onChange={(e) => handleBenefitChange(benefit.id, 'quote', e.target.value)} readOnly={!isEditing} rows={3} placeholder="Mô tả chi tiết về lợi ích..." />
-                                </div>
-                            </AccordionContent>
-                        </AccordionItem>
-                    ))}
-                </Accordion>
-
-                {benefits.length === 0 && !isEditing && (
-                    <p className="text-center text-muted-foreground py-8 font-medium italic">Chưa có lợi ích học viên. Nhấn "Chỉnh sửa" để bắt đầu.</p>
-                )}
-
-                {isEditing && (
-                    <Button variant="outline" className="w-full mt-4 border-dashed py-6" onClick={handleAddBenefit}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Thêm lợi ích mới
-                    </Button>
-                )}
-            </CardContent>
+                        </AccordionContent>
+                    </AccordionItem>
+                ))}
+            </Accordion>
 
             {isEditing && (
-                <CardFooter className="justify-end gap-2 border-t pt-4">
-                    <Button variant="ghost" onClick={handleCancel} disabled={isSubmitting}>
-                        Hủy
-                    </Button>
-                    <Button onClick={handleSave} disabled={isSubmitting}>
-                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
-                        Cập nhật
-                    </Button>
-                </CardFooter>
+                <div className="space-y-4">
+                    <div className="flex justify-end gap-2 border-t pt-4">
+                        <Button variant="destructive" onClick={handleCancel} disabled={isSubmitting}>
+                            Hủy
+                        </Button>
+                        <Button onClick={handleSave} disabled={isSubmitting} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+                            Cập nhật
+                        </Button>
+                    </div>
+                </div>
             )}
-        </Card>
+        </div>
     );
 };
 

@@ -15,8 +15,6 @@ const formatCurrency = (value: string | number = '') => {
 };
 
 export const CourseInfoDisplay = ({ course }: { course: Course }) => {
-    const { toast } = useToast();
-
     const infoItems = [
         { label: 'TÊN KHÓA HỌC', value: course.title || 'Chưa cập nhật' },
         { label: course.type === 'Membership' ? 'GIÁ THÁNG' : 'HỌC PHÍ', value: course.fee ? `${formatCurrency(course.fee)} VNĐ` : 'Chưa cập nhật' },
@@ -29,50 +27,28 @@ export const CourseInfoDisplay = ({ course }: { course: Course }) => {
         { label: "SỐ LƯỢNG HỌC VIÊN", value: (course.studentCount !== undefined && course.studentCount !== null) ? String(course.studentCount) : 'Chưa cập nhật' },
     ];
 
-    const copyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text);
-        toast({
-            title: "Đã sao chép",
-            description: "Đã sao chép ID vào bộ nhớ tạm",
-        });
-    };
-
     return (
-        <div className="space-y-8 relative">
-            {/* Info Section */}
-            <div className="space-y-6">
-                <div className="bg-muted/30 p-4 rounded-lg border">
-                    <div className="flex items-center justify-between mb-2">
-                        <Label className="text-sm text-muted-foreground uppercase">ID Khóa học</Label>
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => copyToClipboard(course.id)}>
-                            <Copy className="h-3 w-3" />
-                        </Button>
-                    </div>
-                    <code className="text-sm font-mono block break-all">{course.id}</code>
+        <div className="space-y-8">
+            {course.shortDescription && (
+                <div>
+                    <Label className="text-sm text-muted-foreground uppercase">Mô tả ngắn</Label>
+                    <p className="font-semibold text-base mt-1">{course.shortDescription}</p>
                 </div>
+            )}
 
-                {course.shortDescription && (
-                    <div>
-                        <Label className="text-sm text-muted-foreground uppercase">Mô tả ngắn</Label>
-                        <p className="font-medium text-base mt-1 whitespace-pre-wrap">{course.shortDescription}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {infoItems.map((item, idx) => (
+                    <div key={idx}>
+                        <Label className="text-sm text-muted-foreground uppercase">{item.label}</Label>
+                        <p className="font-semibold text-base mt-1">{item.value}</p>
                     </div>
-                )}
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-8">
-                    {infoItems.map((item, idx) => (
-                        <div key={idx}>
-                            <Label className="text-sm text-muted-foreground uppercase">{item.label}</Label>
-                            <p className="font-semibold text-base mt-1">{item.value}</p>
-                        </div>
-                    ))}
-                </div>
+                ))}
             </div>
 
-            {/* Images Section - Now at the bottom */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <Label className="text-sm text-muted-foreground uppercase block mb-2">Hình ảnh (16:9)</Label>
-                    <div className="w-full aspect-video flex items-center justify-center rounded-md border bg-muted overflow-hidden relative">
+                    <Label className="text-sm text-muted-foreground uppercase">Hình ảnh (16:9)</Label>
+                    <div className="mt-2 w-48 h-32 flex items-center justify-center rounded-md border bg-muted overflow-hidden relative">
                         {course.thumbnailUrl ? (
                             <Image src={course.thumbnailUrl} alt="Thumbnail 16:9" fill className="object-cover" />
                         ) : (
@@ -84,8 +60,8 @@ export const CourseInfoDisplay = ({ course }: { course: Course }) => {
                     </div>
                 </div>
                 <div>
-                    <Label className="text-sm text-muted-foreground uppercase block mb-2">Hình ảnh (9:16)</Label>
-                    <div className="w-1/2 mx-auto md:mx-0 aspect-[9/16] flex items-center justify-center rounded-md border bg-muted overflow-hidden relative">
+                    <Label className="text-sm text-muted-foreground uppercase">Hình ảnh (9:16)</Label>
+                    <div className="mt-2 w-32 h-48 flex items-center justify-center rounded-md border bg-muted overflow-hidden relative">
                         {course.thumbnailUrl_9_16 ? (
                             <Image src={course.thumbnailUrl_9_16} alt="Thumbnail 9:16" fill className="object-cover" />
                         ) : (
