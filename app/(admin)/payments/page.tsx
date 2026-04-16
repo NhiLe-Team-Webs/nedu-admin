@@ -114,7 +114,7 @@ function TransactionModal({
   onClose: () => void
   onConfirm: (id: string) => void
 }) {
-  const isMis = row.paid !== row.expected
+  const isMis = row.paid > 0 && row.paid !== row.expected
 
   return (
     <div
@@ -249,6 +249,8 @@ function TransactionModal({
 // ─── main page ───────────────────────────────────────────────────────────────
 
 export default function PaymentsPage() {
+  const PAGE_SIZE = 50
+
   const [rows,      setRows]      = useState<Transaction[]>([])
   const [courses,   setCourses]   = useState<CourseInfo[]>([])
   const [loading,   setLoading]   = useState(true)
@@ -259,6 +261,10 @@ export default function PaymentsPage() {
   const [filterC,   setFilterC]   = useState("")
   const [filterM,   setFilterM]   = useState("")
   const [modal,     setModal]     = useState<Transaction | null>(null)
+  const [page,      setPage]      = useState(1)
+
+  // reset page when data changes
+  useEffect(() => { setPage(1) }, [rows])
 
   // ── debounce search input ──────────────────────────────────────────────────
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -332,14 +338,18 @@ export default function PaymentsPage() {
     a.download = "nedu-thanh-toan-" + new Date().toISOString().slice(0, 10) + ".csv"; a.click()
   }
 
-  // ── group rows by date for separator rows ─────────────────────────────────
+  // ── pagination ────────────────────────────────────────────────────────────
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE))
+  const pagedRows  = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  // ── group paged rows by date for separator rows ───────────────────────────
   type RowGroup = { dateLabel: string; isToday: boolean; rows: Transaction[] }
   const grouped: RowGroup[] = []
   {
     const now   = new Date()
     const today = new Date(now); today.setHours(0, 0, 0, 0)
     let lastD   = ""
-    rows.forEach(row => {
+    pagedRows.forEach(row => {
       const ds = fmtD(row.time)
       if (ds !== lastD) {
         const isT = new Date(row.time) >= today
@@ -382,8 +392,8 @@ export default function PaymentsPage() {
         />
         <MetricCard
           icon={Clock} color="amber" label="Chờ xác nhận"
-          value={loading ? "—" : String(pend.length)}
-          sub={`Tổng <b>${fmt(pend.reduce((s, r) => s + r.paid, 0))}</b> đang chờ`}
+          value={loading ? "—" : fmt(pend.reduce((s, r) => s + r.paid, 0))}
+          sub={`<b>${pend.length}</b> giao dịch đang chờ xác nhận`}
         />
         <MetricCard
           icon={AlertTriangle} color={mis.length > 0 ? "red" : "neutral"} label="Chênh lệch cần thu thêm"
@@ -439,6 +449,7 @@ export default function PaymentsPage() {
               options: [
                 { value: "",       label: "Tất cả phương thức" },
                 { value: "sepay",  label: "SePay (QR)" },
+                { value: "vnpay",  label: "VNPay" },
               ],
             },
             {
@@ -539,7 +550,7 @@ export default function PaymentsPage() {
                     </tr>
 
                     {group.rows.map(row => {
-                      const isMis = row.paid !== row.expected
+                      const isMis = row.paid > 0 && row.paid !== row.expected
                       return (
                         <tr
                           key={row.id}
@@ -592,6 +603,56 @@ export default function PaymentsPage() {
             </table>
           )}
         </div>
+
+        {/* pagination */}
+        {!loading && rows.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-black/[.07] dark:border-white/[.07]">
+            <span className="text-[11px] text-neutral-400">
+              {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, rows.length)} / {rows.length} giao dịch
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-2.5 py-1 text-[11px] rounded-lg border border-black/[.12] dark:border-white/[.12] disabled:opacity-40 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+              >
+                ‹
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 2)
+                .reduce<(number | "…")[]>((acc, p, idx, arr) => {
+                  if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push("…")
+                  acc.push(p)
+                  return acc
+                }, [])
+                .map((p, i) =>
+                  p === "…" ? (
+                    <span key={`dots-${i}`} className="px-1.5 text-[11px] text-neutral-400">…</span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p as number)}
+                      className={`w-7 h-7 text-[11px] rounded-lg transition-colors ${
+                        page === p
+                          ? "text-white"
+                          : "border border-black/[.12] dark:border-white/[.12] hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                      }`}
+                      style={page === p ? { background: "#2D6A8C" } : {}}
+                    >
+                      {p}
+                    </button>
+                  )
+                )}
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-2.5 py-1 text-[11px] rounded-lg border border-black/[.12] dark:border-white/[.12] disabled:opacity-40 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+              >
+                ›
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* modal */}
