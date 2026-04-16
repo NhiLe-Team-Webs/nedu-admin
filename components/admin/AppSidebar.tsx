@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { BookOpen, KeyRound, LogOut } from "lucide-react"
+import { BookOpen, KeyRound, LogOut, CreditCard } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { User } from "@supabase/supabase-js"
@@ -20,8 +20,9 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 const sidebarItems = [
-    { title: "Khóa Học", icon: BookOpen, href: "/courses" },
-    { title: "Phân Quyền", icon: KeyRound, href: "/permissions" },
+    { title: "Khóa Học",    icon: BookOpen,    href: "/courses" },
+    { title: "Thanh toán",  icon: CreditCard,  href: "/payments" },
+    { title: "Phân Quyền", icon: KeyRound,    href: "/permissions" },
 ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
