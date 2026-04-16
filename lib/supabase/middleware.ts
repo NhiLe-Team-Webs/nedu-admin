@@ -49,30 +49,7 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url)
     }
 
-    // ── email whitelist ──────────────────────────────────────────────────────
-    // Allow specific emails or any @nhi.sg domain.
-    // Add more emails to ALLOWED_EMAILS env var (comma-separated).
-    if (user && !isAuthRoute) {
-        const email = user.email ?? ""
-        const allowedEmails = (process.env.ALLOWED_EMAILS ?? "")
-            .split(",")
-            .map(e => e.trim().toLowerCase())
-            .filter(Boolean)
-        const allowedDomain = process.env.ALLOWED_DOMAIN ?? "nhi.sg"
-
-        const isAllowed =
-            email.endsWith(`@${allowedDomain}`) ||
-            allowedEmails.includes(email.toLowerCase())
-
-        if (!isAllowed) {
-            await supabase.auth.signOut()
-            const url = request.nextUrl.clone()
-            url.pathname = '/auth/auth-code-error'
-            return NextResponse.redirect(url)
-        }
-    }
-
-    // If user is logged in and tries to go to login, redirect to dashboard
+// If user is logged in and tries to go to login, redirect to dashboard
     if (user && request.nextUrl.pathname.startsWith('/login')) {
         const url = request.nextUrl.clone()
         url.pathname = '/'
