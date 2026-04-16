@@ -114,7 +114,7 @@ function TransactionModal({
   onClose: () => void
   onConfirm: (id: string) => void
 }) {
-  const isMis = row.paid !== row.expected
+  const isMis = row.paid > 0 && row.paid !== row.expected
 
   return (
     <div
@@ -382,8 +382,8 @@ export default function PaymentsPage() {
         />
         <MetricCard
           icon={Clock} color="amber" label="Chờ xác nhận"
-          value={loading ? "—" : String(pend.length)}
-          sub={`Tổng <b>${fmt(pend.reduce((s, r) => s + r.paid, 0))}</b> đang chờ`}
+          value={loading ? "—" : fmt(pend.reduce((s, r) => s + r.paid, 0))}
+          sub={`<b>${pend.length}</b> giao dịch đang chờ xác nhận`}
         />
         <MetricCard
           icon={AlertTriangle} color={mis.length > 0 ? "red" : "neutral"} label="Chênh lệch cần thu thêm"
@@ -539,7 +539,7 @@ export default function PaymentsPage() {
                     </tr>
 
                     {group.rows.map(row => {
-                      const isMis = row.paid !== row.expected
+                      const isMis = row.paid > 0 && row.paid !== row.expected
                       return (
                         <tr
                           key={row.id}

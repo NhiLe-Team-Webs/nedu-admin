@@ -132,7 +132,24 @@ export async function GET(req: NextRequest) {
       }
 
       const courseName = row.course_name || row.program || ""
-      const courseInfo = (row.program_id ? courseMap.get(row.program_id as number) : undefined) ?? {
+
+      // 1. Lookup by program_id (most reliable)
+      let courseInfo = row.program_id ? courseMap.get(row.program_id as number) : undefined
+
+      // 2. Fallback: partial name match (handles capitalisation/suffix diffs like "Sức Mạnh Vô Hạn" → "Sức mạnh vô hạn")
+      if (!courseInfo && courseName) {
+        const nameLower = courseName.toLowerCase().trim()
+        const nameParts = nameLower.split(/\s+/).slice(0, 3).join(" ")
+        for (const c of courseList) {
+          const cLower = c.name.toLowerCase().trim()
+          if (nameLower === cLower || nameLower.includes(cLower) || cLower.includes(nameParts)) {
+            courseInfo = c
+            break
+          }
+        }
+      }
+
+      courseInfo = courseInfo ?? {
         id:    row.program_id ?? 0,
         name:  courseName || "Không rõ",
         price: expected,
