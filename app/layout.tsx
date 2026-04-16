@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { Agentation } from "agentation";
 
 
 const beVietnamPro = Be_Vietnam_Pro({
@@ -33,7 +34,7 @@ export default function RootLayout({
             <body className={cn("font-sans antialiased", beVietnamPro.variable, beVietnamPro.className)}>
                 {children}
                 <ToastContainer />
-
+                {process.env.NODE_ENV === "development" && <Agentation />}
             </body>
         </html>
     );
