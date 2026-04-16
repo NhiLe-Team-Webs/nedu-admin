@@ -1,13 +1,14 @@
 'use client';
 
-import { ChevronRight, LogOut, BookOpen, KeyRound, X } from 'lucide-react';
+import { ChevronRight, LogOut, BookOpen, KeyRound, CreditCard, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User } from '@supabase/supabase-js';
 import { cn } from '@/lib/utils';
 
 const menuItems = [
-    { view: 'courses', icon: BookOpen, label: 'Khóa Học', href: '/courses' },
-    { view: 'permissions', icon: KeyRound, label: 'Phân Quyền', href: '/permissions' },
+    { view: 'courses',     icon: BookOpen,    label: 'Khóa Học',    href: '/courses' },
+    { view: 'payments',    icon: CreditCard,  label: 'Thanh toán',  href: '/payments' },
+    { view: 'permissions', icon: KeyRound,    label: 'Phân Quyền', href: '/permissions' },
 ];
 
 interface MobileNavProps {
