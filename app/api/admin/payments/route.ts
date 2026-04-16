@@ -59,21 +59,25 @@ export async function GET(req: NextRequest) {
     const courseList: CourseInfo[] = (programs ?? []).map((p, i) =>
       buildCourseInfo(p, i)
     )
-    const courseMap = new Map<string, CourseInfo>()
-    courseList.forEach(c => courseMap.set(c.name, c))
+    // Map by program ID for reliable color lookup (course_name in order ≠ program_name)
+    const courseMap = new Map<number, CourseInfo>()
+    courseList.forEach(c => courseMap.set(c.id, c))
 
     // ── build order query ────────────────────────────────────────────────────
     let orderQuery = supabase
       .from("order")
-      .select("id, created_at, full_name, phone, course_name, program, price, status, code, transaction_id")
-      .gte("created_at", fromDate.toISOString())
+      .select("id, created_at, full_name, phone, course_name, program, price, status, code, transaction_id, program_id")
       .order("created_at", { ascending: false })
 
+    if (fromDate) {
+      orderQuery = orderQuery.gte("created_at", fromDate.toISOString())
+    }
     if (toDate) {
       orderQuery = orderQuery.lt("created_at", toDate.toISOString())
     }
     if (course) {
-      orderQuery = orderQuery.eq("course_name", course)
+      // course param is the program_id as string
+      orderQuery = orderQuery.eq("program_id", Number(course))
     }
     if (q) {
       orderQuery = orderQuery.or(
@@ -128,8 +132,8 @@ export async function GET(req: NextRequest) {
       }
 
       const courseName = row.course_name || row.program || ""
-      const courseInfo = courseMap.get(courseName) ?? {
-        id:    0,
+      const courseInfo = (row.program_id ? courseMap.get(row.program_id as number) : undefined) ?? {
+        id:    row.program_id ?? 0,
         name:  courseName || "Không rõ",
         price: expected,
         ...FALLBACK_COURSE_COLOR,

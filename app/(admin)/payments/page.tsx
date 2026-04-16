@@ -432,7 +432,7 @@ export default function PaymentsPage() {
           {[
             {
               id: "course", value: filterC, onChange: setFilterC,
-              options: [{ value: "", label: "Tất cả khoá" }, ...courses.map(c => ({ value: c.name, label: c.name }))],
+              options: [{ value: "", label: "Tất cả khoá" }, ...courses.map(c => ({ value: String(c.id), label: c.name }))],
             },
             {
               id: "method", value: filterM, onChange: setFilterM,
