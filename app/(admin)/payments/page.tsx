@@ -449,6 +449,7 @@ export default function PaymentsPage() {
               options: [
                 { value: "",       label: "Tất cả phương thức" },
                 { value: "sepay",  label: "SePay (QR)" },
+                { value: "vnpay",  label: "VNPay" },
               ],
             },
             {
